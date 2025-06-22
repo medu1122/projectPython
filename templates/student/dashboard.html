@@ -1,0 +1,405 @@
+{% extends "layout.html" %}
+
+{% block title %}Student Dashboard - LMS{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Welcome, {{ current_user.first_name }}!</h1>
+            <p>Your learning journey continues here. Track your progress, access your courses, and complete assignments.</p>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Your Learning Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Overall Completion</span>
+                        <span>{{ overall_progress }}%</span>
+                    </div>
+                    <div class="progress mb-4">
+                        <div class="progress-bar" role="progressbar" style="width: {{ overall_progress }}%" aria-valuenow="{{ overall_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="p-3">
+                                <h3>{{ enrolled_courses_count }}</h3>
+                                <p>Enrolled Courses</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="p-3">
+                                <h3>{{ completed_lessons_count }}</h3>
+                                <p>Completed Lessons</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="p-3">
+                                <h3>{{ completed_assignments_count }}</h3>
+                                <p>Completed Assignments</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Courses -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Your Active Courses</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_courses %}
+                        <div class="row">
+                            {% for course in enrolled_courses %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card course-card">
+                                        <div class="course-card-img" style="background-image: url('{{ course.image_url }}');"></div>
+                                        <div class="course-card-body">
+                                            <h5 class="course-card-title">{{ course.title }}</h5>
+                                            <p class="course-card-text">{{ course.description|truncate(100) }}</p>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar" role="progressbar" style="width: {{ course.progress }}%" aria-valuenow="{{ course.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <small>{{ course.progress }}% Complete</small>
+                                        </div>
+                                        <div class="course-card-footer">
+                                            <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="btn btn-primary btn-sm">Continue Learning</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if more_courses %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('student.courses') }}" class="btn btn-outline-primary">View All Courses</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-book fa-3x mb-3 text-secondary"></i>
+                            <h5>You're not enrolled in any courses yet</h5>
+                            <p>Explore our course catalog and start learning today!</p>
+                            <a href="{{ url_for('student.course_catalog') }}" class="btn btn-primary">Browse Courses</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Assignments -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Upcoming Assignments</h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Assignment</th>
+                                        <th>Course</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in upcoming_assignments %}
+                                        <tr>
+                                            <td>{{ assignment.title }}</td>
+                                            <td>{{ assignment.course.title }}</td>
+                                            <td>{{ assignment.due_date.strftime('%b %d, %Y') }}</td>
+                                            <td>
+                                                {% if assignment.status == 'not_started' %}
+                                                    <span class="badge badge-warning">Not Started</span>
+                                                {% elif assignment.status == 'in_progress' %}
+                                                    <span class="badge badge-info">In Progress</span>
+                                                {% elif assignment.status == 'submitted' %}
+                                                    <span class="badge badge-primary">Submitted</span>
+                                                {% elif assignment.status == 'graded' %}
+                                                    <span class="badge badge-success">Graded</span>
+                                                {% elif assignment.status == 'overdue' %}
+                                                    <span class="badge badge-danger">Overdue</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('student.view_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if more_assignments %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('student.assignments') }}" class="btn btn-outline-primary">View All Assignments</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-tasks fa-3x mb-3 text-secondary"></i>
+                            <h5>No upcoming assignments</h5>
+                            <p>You're all caught up!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                        <ul class="list-group list-group-flush">
+                            {% for activity in recent_activities %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if activity.type == 'lesson_completion' %}
+                                            <i class="fas fa-check-circle text-success mr-2"></i>
+                                            Completed lesson <strong>{{ activity.lesson.title }}</strong> in <a href="{{ url_for('student.course_detail', course_id=activity.course.id) }}">{{ activity.course.title }}</a>
+                                        {% elif activity.type == 'assignment_submission' %}
+                                            <i class="fas fa-paper-plane text-primary mr-2"></i>
+                                            Submitted assignment <strong>{{ activity.assignment.title }}</strong> for <a href="{{ url_for('student.course_detail', course_id=activity.course.id) }}">{{ activity.course.title }}</a>
+                                        {% elif activity.type == 'course_enrollment' %}
+                                            <i class="fas fa-user-plus text-info mr-2"></i>
+                                            Enrolled in course <a href="{{ url_for('student.course_detail', course_id=activity.course.id) }}">{{ activity.course.title }}</a>
+                                        {% elif activity.type == 'grade_received' %}
+                                            <i class="fas fa-star text-warning mr-2"></i>
+                                            Received grade for <strong>{{ activity.assignment.title }}</strong>: {{ activity.grade }}/100
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ activity.timestamp.strftime('%b %d, %H:%M') }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-history fa-3x mb-3 text-secondary"></i>
+                            <h5>No recent activity</h5>
+                            <p>Start learning to see your activity here!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learning Recommendations -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Recommended for You</h5>
+                </div>
+                <div class="card-body">
+                    {% if recommended_courses %}
+                        <div class="row">
+                            {% for course in recommended_courses %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card course-card">
+                                        <div class="course-card-img" style="background-image: url('{{ course.image_url }}');"></div>
+                                        <div class="course-card-body">
+                                            <h5 class="course-card-title">{{ course.title }}</h5>
+                                            <p class="course-card-text">{{ course.description|truncate(100) }}</p>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="mr-2">
+                                                    <i class="fas fa-star text-warning"></i>
+                                                    {{ course.rating|round(1) }}
+                                                </div>
+                                                <div class="mr-2">|</div>
+                                                <div>
+                                                    <i class="fas fa-users text-secondary"></i>
+                                                    {{ course.students_count }} students
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="course-card-footer">
+                                            <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">Learn More</a>
+                                            <button class="btn btn-primary btn-sm enroll-button" data-course-id="{{ course.id }}" onclick="enrollInCourse({{ course.id }})">Enroll</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-lightbulb fa-3x mb-3 text-secondary"></i>
+                            <h5>No recommendations yet</h5>
+                            <p>Explore more courses to get personalized recommendations!</p>
+                            <a href="{{ url_for('student.course_catalog') }}" class="btn btn-primary">Browse Courses</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_css %}
+<style>
+    .dashboard-header {
+        margin-bottom: 30px;
+    }
+    
+    .dashboard-subtitle {
+        color: #666;
+        margin-top: 5px;
+    }
+    
+    .dashboard-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .dashboard-section {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .section-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 0;
+        color: #666;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        color: #ddd;
+    }
+    
+    .assignments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .assignment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .assignment-info h3 {
+        margin: 0 0 5px;
+        font-size: 1.1rem;
+    }
+    
+    .assignment-info p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .assignment-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+    }
+    
+    .due-date {
+        font-size: 0.9rem;
+        color: #dc3545;
+    }
+    
+    .chatbot-preview {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    
+    .chatbot-preview-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .chatbot-preview-header i {
+        font-size: 1.5rem;
+        color: var(--primary-color);
+        margin-right: 10px;
+    }
+    
+    .chatbot-preview-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .chatbot-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .chat-suggestion {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        padding: 8px 15px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .chat-suggestion:hover {
+        background-color: var(--primary-color);
+        color: #fff;
+        border-color: var(--primary-color);
+    }
+    
+    @media (max-width: 768px) {
+        .assignment-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .assignment-meta {
+            margin-top: 10px;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %} 

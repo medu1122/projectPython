@@ -1,0 +1,430 @@
+{% extends "layout.html" %}
+
+{% block title %}Admin Dashboard - LMS{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Admin Dashboard</h1>
+            <p>Welcome to the admin control panel. Manage users, courses, and system settings.</p>
+        </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2 text-primary"></i>
+                    <h3>{{ stats.total_users }}</h3>
+                    <p class="mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-2x mb-2 text-info"></i>
+                    <h3>{{ stats.total_courses }}</h3>
+                    <p class="mb-0">Total Courses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-graduate fa-2x mb-2 text-warning"></i>
+                    <h3>{{ stats.active_students }}</h3>
+                    <p class="mb-0">Active Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chalkboard-teacher fa-2x mb-2 text-success"></i>
+                    <h3>{{ stats.active_teachers }}</h3>
+                    <p class="mb-0">Active Teachers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.create_user') }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-user-plus mr-2"></i> Add New User
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.create_course') }}" class="btn btn-info btn-block">
+                                <i class="fas fa-plus-circle mr-2"></i> Create Course
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.system_settings') }}" class="btn btn-warning btn-block">
+                                <i class="fas fa-cogs mr-2"></i> System Settings
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.reports') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-chart-bar mr-2"></i> View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Users</h5>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Joined</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in recent_users %}
+                                        <tr>
+                                            <td>{{ user.first_name }} {{ user.last_name }}</td>
+                                            <td>{{ user.email }}</td>
+                                            <td>
+                                                {% if user.role.name == 'ADMIN' %}
+                                                    <span class="badge badge-danger">Admin</span>
+                                                {% elif user.role.name == 'TEACHER' %}
+                                                    <span class="badge badge-info">Teacher</span>
+                                                {% elif user.role.name == 'STUDENT' %}
+                                                    <span class="badge badge-primary">Student</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ user.created_at.strftime('%b %d, %Y') }}</td>
+                                            <td>
+                                                {% if user.is_active %}
+                                                    <span class="badge badge-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#deleteUserModal" data-user-id="{{ user.id }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x mb-3 text-secondary"></i>
+                            <h5>No users found</h5>
+                            <p>Start by adding users to the system</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Courses -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Courses</h5>
+                    <a href="{{ url_for('admin.courses') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_courses %}
+                        <div class="row">
+                            {% for course in recent_courses %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card course-card">
+                                        <div class="course-card-img" style="background-image: url('{{ course.image_url }}');"></div>
+                                        <div class="course-card-body">
+                                            <h5 class="course-card-title">{{ course.title }}</h5>
+                                            <p class="course-card-text">{{ course.description|truncate(100) }}</p>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="mr-2">
+                                                    <i class="fas fa-user-tie text-secondary"></i>
+                                                    {{ course.teacher.first_name }} {{ course.teacher.last_name }}
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>
+                                                    <i class="fas fa-users text-secondary"></i>
+                                                    {{ course.students_count }} students
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-star text-warning"></i>
+                                                    {{ course.rating|round(1) }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="course-card-footer">
+                                            <a href="{{ url_for('admin.course_detail', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">View</a>
+                                            <a href="{{ url_for('admin.edit_course', course_id=course.id) }}" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-book fa-3x mb-3 text-secondary"></i>
+                            <h5>No courses found</h5>
+                            <p>Start by creating courses in the system</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Health</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Server Status</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>CPU Usage</td>
+                                            <td>
+                                                <div class="progress">
+                                                    <div class="progress-bar" role="progressbar" style="width: {{ system_health.cpu_usage }}%" aria-valuenow="{{ system_health.cpu_usage }}" aria-valuemin="0" aria-valuemax="100">{{ system_health.cpu_usage }}%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Memory Usage</td>
+                                            <td>
+                                                <div class="progress">
+                                                    <div class="progress-bar" role="progressbar" style="width: {{ system_health.memory_usage }}%" aria-valuenow="{{ system_health.memory_usage }}" aria-valuemin="0" aria-valuemax="100">{{ system_health.memory_usage }}%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Disk Usage</td>
+                                            <td>
+                                                <div class="progress">
+                                                    <div class="progress-bar" role="progressbar" style="width: {{ system_health.disk_usage }}%" aria-valuenow="{{ system_health.disk_usage }}" aria-valuemin="0" aria-valuemax="100">{{ system_health.disk_usage }}%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Uptime</td>
+                                            <td>{{ system_health.uptime }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Recent Errors</h6>
+                            {% if system_health.recent_errors %}
+                                <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Type</th>
+                                                <th>Message</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for error in system_health.recent_errors %}
+                                                <tr>
+                                                    <td>{{ error.timestamp.strftime('%H:%M:%S') }}</td>
+                                                    <td>{{ error.type }}</td>
+                                                    <td>{{ error.message|truncate(50) }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle mr-2"></i> No errors reported
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Overview -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Analytics Overview</h5>
+                    <a href="{{ url_for('admin.analytics') }}" class="btn btn-sm btn-outline-primary">Detailed Analytics</a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">User Registrations</h6>
+                            <div class="chart-container" style="position: relative; height:250px;">
+                                <canvas id="registrationsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">User Distribution</h6>
+                            <div class="chart-container" style="position: relative; height:250px;">
+                                <canvas id="userDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirm Deletion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this user? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteUserForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // User Registrations Chart
+        const registrationsCtx = document.getElementById('registrationsChart').getContext('2d');
+        const registrationsChart = new Chart(registrationsCtx, {
+            type: 'line',
+            data: {
+                labels: {{ analytics.registrations.labels|tojson }},
+                datasets: [{
+                    label: 'New Users',
+                    data: {{ analytics.registrations.values|tojson }},
+                    backgroundColor: 'rgba(74, 107, 175, 0.2)',
+                    borderColor: 'rgba(74, 107, 175, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // User Distribution Chart
+        const distributionCtx = document.getElementById('userDistributionChart').getContext('2d');
+        const distributionChart = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Students', 'Teachers', 'Admins'],
+                datasets: [{
+                    data: [
+                        {{ analytics.user_distribution.students }},
+                        {{ analytics.user_distribution.teachers }},
+                        {{ analytics.user_distribution.admins }}
+                    ],
+                    backgroundColor: [
+                        'rgba(74, 107, 175, 0.7)',
+                        'rgba(23, 162, 184, 0.7)',
+                        'rgba(220, 53, 69, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(74, 107, 175, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(220, 53, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Delete User Modal
+        $('#deleteUserModal').on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            const userId = button.data('user-id');
+            const form = document.getElementById('deleteUserForm');
+            form.action = `/admin/users/${userId}/delete`;
+        });
+    });
+</script>
+{% endblock %} 

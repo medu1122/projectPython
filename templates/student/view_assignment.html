@@ -1,0 +1,552 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ assignment.title }} - LMS{% endblock %}
+
+{% block content %}
+<div class="assignment-header">
+    <div class="assignment-breadcrumb">
+        <a href="{{ url_for('view_course', course_id=course.id) }}">{{ course.title }}</a>
+        <span class="separator">/</span>
+        <span class="current">{{ assignment.title }}</span>
+    </div>
+    
+    {% if assignment.due_date %}
+    <div class="assignment-due-date {% if assignment.due_date < now %}overdue{% endif %}">
+        Due: {{ assignment.due_date.strftime('%b %d, %Y at %I:%M %p') }}
+    </div>
+    {% endif %}
+</div>
+
+<div class="assignment-container">
+    <div class="assignment-details">
+        <h1>{{ assignment.title }}</h1>
+        
+        <div class="assignment-description">
+            {{ assignment.description|safe }}
+        </div>
+        
+        {% if submission %}
+        <div class="submission-status">
+            <div class="submission-info">
+                <h3>Submission Status</h3>
+                <p>Submitted on {{ submission.submitted_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
+                
+                {% if submission.score is not none %}
+                <div class="submission-score">
+                    <h4>Score</h4>
+                    <p class="score">{{ submission.score }}</p>
+                </div>
+                
+                {% if submission.feedback %}
+                <div class="submission-feedback">
+                    <h4>Feedback</h4>
+                    <p>{{ submission.feedback }}</p>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="pending-review">Pending review</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="assignment-submission">
+        <h2>Your Submission</h2>
+        
+        {% if assignment.assignment_type == 'code' %}
+        <div class="code-editor-container">
+            <div class="code-editor-header">
+                <div class="code-editor-language">
+                    Language: {{ assignment.language|upper }}
+                </div>
+                <div class="code-editor-actions">
+                    <button id="run-code-btn" class="btn btn-secondary" data-assignment-id="{{ assignment.id }}">
+                        <i class="fas fa-play"></i> Run Code
+                    </button>
+                    <button id="submit-code-btn" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit
+                    </button>
+                </div>
+            </div>
+            
+            <textarea id="code-editor" class="code-editor-textarea" placeholder="Write your code here...">{% if submission %}{{ submission.content }}{% endif %}</textarea>
+            
+            <div id="code-output" class="code-output">
+                <div class="output-header">Output</div>
+                <div class="output-content">Run your code to see the output here.</div>
+            </div>
+            
+            <form id="submission-form" method="POST" action="{{ url_for('submit_assignment', assignment_id=assignment.id) }}">
+                <input type="hidden" id="code-input" name="code" value="{% if submission %}{{ submission.content }}{% endif %}">
+            </form>
+        </div>
+        
+        {% elif assignment.assignment_type == 'quiz' %}
+        <form method="POST" action="{{ url_for('submit_assignment', assignment_id=assignment.id) }}" class="quiz-form">
+            <!-- Quiz questions would be dynamically generated based on assignment content -->
+            <div class="quiz-questions">
+                <p>This is a placeholder for quiz questions. In a real implementation, questions would be loaded from the database.</p>
+                
+                <div class="quiz-question">
+                    <h3>Sample Question 1</h3>
+                    <p>What is the correct answer to this question?</p>
+                    <div class="quiz-options">
+                        <div class="quiz-option">
+                            <input type="radio" id="q1-a" name="q1" value="a">
+                            <label for="q1-a">Option A</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" id="q1-b" name="q1" value="b">
+                            <label for="q1-b">Option B</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" id="q1-c" name="q1" value="c">
+                            <label for="q1-c">Option C</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" id="q1-d" name="q1" value="d">
+                            <label for="q1-d">Option D</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Submit Quiz</button>
+        </form>
+        
+        {% elif assignment.assignment_type == 'upload' %}
+        <form method="POST" action="{{ url_for('submit_assignment', assignment_id=assignment.id) }}" enctype="multipart/form-data" class="upload-form">
+            <div class="file-upload-container">
+                <div class="file-upload-area" id="drop-area">
+                    <input type="file" id="file-input" name="file" class="file-input">
+                    <label for="file-input" class="file-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Choose a file or drag it here</span>
+                    </label>
+                    <div id="file-preview" class="file-preview"></div>
+                </div>
+                
+                {% if submission and submission.file_path %}
+                <div class="current-file">
+                    <h4>Current Submission</h4>
+                    <p>{{ submission.file_path.split('_')[-1] }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Submit File</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_css %}
+<style>
+    .assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .assignment-breadcrumb {
+        font-size: 0.9rem;
+    }
+    
+    .assignment-breadcrumb a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    
+    .separator {
+        margin: 0 5px;
+        color: #666;
+    }
+    
+    .current {
+        color: #666;
+    }
+    
+    .assignment-due-date {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .overdue {
+        color: var(--danger-color);
+    }
+    
+    .assignment-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+    
+    .assignment-details, .assignment-submission {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .assignment-details h1 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+    }
+    
+    .assignment-description {
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .submission-status {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .submission-info h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+    }
+    
+    .submission-info p {
+        margin: 0 0 10px;
+    }
+    
+    .submission-score {
+        margin-top: 15px;
+    }
+    
+    .submission-score h4, .submission-feedback h4 {
+        margin: 0 0 5px;
+        font-size: 1rem;
+    }
+    
+    .score {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--success-color);
+    }
+    
+    .pending-review {
+        color: var(--warning-color);
+        font-style: italic;
+    }
+    
+    .assignment-submission h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+    
+    /* Code Editor Styles */
+    .code-editor-container {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+    }
+    
+    .code-editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f1f1f1;
+        padding: 10px 15px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .code-editor-language {
+        font-weight: 500;
+    }
+    
+    .code-editor-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .code-editor-textarea {
+        width: 100%;
+        min-height: 300px;
+        padding: 15px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        border: none;
+        resize: vertical;
+    }
+    
+    .code-output {
+        background-color: #f8f9fa;
+        border-top: 1px solid #ddd;
+    }
+    
+    .output-header {
+        padding: 10px 15px;
+        font-weight: 500;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .output-content {
+        padding: 15px;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        min-height: 100px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    /* Quiz Styles */
+    .quiz-form {
+        padding: 10px;
+    }
+    
+    .quiz-questions {
+        margin-bottom: 20px;
+    }
+    
+    .quiz-question {
+        margin-bottom: 30px;
+    }
+    
+    .quiz-question h3 {
+        margin: 0 0 10px;
+        font-size: 1.2rem;
+    }
+    
+    .quiz-options {
+        margin-top: 15px;
+    }
+    
+    .quiz-option {
+        margin-bottom: 10px;
+    }
+    
+    .quiz-option input[type="radio"] {
+        margin-right: 10px;
+    }
+    
+    /* File Upload Styles */
+    .file-upload-container {
+        margin-bottom: 20px;
+    }
+    
+    .file-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.3s;
+    }
+    
+    .file-upload-area:hover {
+        border-color: var(--primary-color);
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .file-label {
+        display: block;
+        cursor: pointer;
+    }
+    
+    .file-label i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+    
+    .file-preview {
+        margin-top: 15px;
+    }
+    
+    .current-file {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .current-file h4 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+    }
+    
+    .current-file p {
+        margin: 0;
+    }
+    
+    @media (max-width: 992px) {
+        .assignment-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block additional_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Code Editor functionality
+        const codeEditor = document.getElementById('code-editor');
+        const codeInput = document.getElementById('code-input');
+        const runButton = document.getElementById('run-code-btn');
+        const submitButton = document.getElementById('submit-code-btn');
+        const submissionForm = document.getElementById('submission-form');
+        const outputArea = document.getElementById('code-output');
+        const outputContent = outputArea ? outputArea.querySelector('.output-content') : null;
+        
+        if (codeEditor && codeInput && runButton && submitButton && submissionForm && outputContent) {
+            // Update hidden input when code changes
+            codeEditor.addEventListener('input', function() {
+                codeInput.value = this.value;
+            });
+            
+            // Run code
+            runButton.addEventListener('click', function() {
+                const assignmentId = this.dataset.assignmentId;
+                const code = codeEditor.value;
+                
+                if (!code.trim()) {
+                    outputContent.textContent = 'Please write some code first.';
+                    return;
+                }
+                
+                outputContent.textContent = 'Running code...';
+                
+                fetch(`/assignments/${assignmentId}/run_code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `code=${encodeURIComponent(code)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        outputContent.textContent = data.output || 'Code executed successfully with no output.';
+                    } else {
+                        outputContent.textContent = 'Error: ' + data.output;
+                    }
+                })
+                .catch(error => {
+                    outputContent.textContent = 'Error: ' + error.message;
+                });
+            });
+            
+            // Submit code
+            submitButton.addEventListener('click', function() {
+                if (!codeEditor.value.trim()) {
+                    alert('Please write some code before submitting.');
+                    return;
+                }
+                
+                if (confirm('Are you sure you want to submit your code?')) {
+                    submissionForm.submit();
+                }
+            });
+            
+            // Tab key in textarea
+            codeEditor.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    
+                    this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                    
+                    this.selectionStart = this.selectionEnd = start + 4;
+                    
+                    // Update hidden input
+                    codeInput.value = this.value;
+                }
+            });
+        }
+        
+        // File Upload functionality
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const filePreview = document.getElementById('file-preview');
+        
+        if (fileInput && dropArea && filePreview) {
+            // File input change
+            fileInput.addEventListener('change', function() {
+                updateFilePreview(this.files[0]);
+            });
+            
+            // Drag and drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                fileInput.files = files;
+                updateFilePreview(files[0]);
+            }
+            
+            function updateFilePreview(file) {
+                if (!file) {
+                    filePreview.innerHTML = '';
+                    return;
+                }
+                
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'file-info';
+                fileInfo.innerHTML = `
+                    <p><strong>${file.name}</strong></p>
+                    <p>${formatFileSize(file.size)}</p>
+                `;
+                
+                filePreview.innerHTML = '';
+                filePreview.appendChild(fileInfo);
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+        }
+    });
+</script>
+{% endblock %} 

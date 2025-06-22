@@ -1,0 +1,4 @@
+*.mdf
+*.ldf
+__pycache__/
+*.pyc

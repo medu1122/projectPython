@@ -1,0 +1,322 @@
+{% extends "layout.html" %}
+
+{% block title %}Teacher Dashboard - LMS{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Welcome, {{ current_user.first_name }}!</h1>
+            <p>Manage your courses, track student progress, and create engaging learning content.</p>
+        </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-2x mb-2 text-primary"></i>
+                    <h3>{{ courses_count }}</h3>
+                    <p class="mb-0">Courses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2 text-info"></i>
+                    <h3>{{ students_count }}</h3>
+                    <p class="mb-0">Students</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-tasks fa-2x mb-2 text-warning"></i>
+                    <h3>{{ assignments_count }}</h3>
+                    <p class="mb-0">Assignments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-check fa-2x mb-2 text-success"></i>
+                    <h3>{{ submissions_to_grade }}</h3>
+                    <p class="mb-0">Pending Grades</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Your Courses -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Your Courses</h5>
+                    <a href="{{ url_for('teacher.create_course') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Create Course
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if courses %}
+                        <div class="row">
+                            {% for course in courses %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card course-card">
+                                        <div class="course-card-img" style="background-image: url('{{ course.image_url }}');"></div>
+                                        <div class="course-card-body">
+                                            <h5 class="course-card-title">{{ course.title }}</h5>
+                                            <p class="course-card-text">{{ course.description|truncate(100) }}</p>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="mr-2">
+                                                    <i class="fas fa-users text-secondary"></i>
+                                                    {{ course.students_count }} students
+                                                </div>
+                                                <div class="mr-2">|</div>
+                                                <div>
+                                                    <i class="fas fa-star text-warning"></i>
+                                                    {{ course.rating|round(1) }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="course-card-footer">
+                                            <a href="{{ url_for('teacher.course_detail', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">Manage</a>
+                                            <a href="{{ url_for('teacher.edit_course', course_id=course.id) }}" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if more_courses %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('teacher.courses') }}" class="btn btn-outline-primary">View All Courses</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-book fa-3x mb-3 text-secondary"></i>
+                            <h5>You haven't created any courses yet</h5>
+                            <p>Start creating engaging content for your students!</p>
+                            <a href="{{ url_for('teacher.create_course') }}" class="btn btn-primary">Create Your First Course</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Submissions -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Submissions to Grade</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_submissions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Assignment</th>
+                                        <th>Course</th>
+                                        <th>Submitted</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for submission in recent_submissions %}
+                                        <tr>
+                                            <td>{{ submission.student.first_name }} {{ submission.student.last_name }}</td>
+                                            <td>{{ submission.assignment.title }}</td>
+                                            <td>{{ submission.assignment.course.title }}</td>
+                                            <td>{{ submission.submitted_at.strftime('%b %d, %Y') }}</td>
+                                            <td>
+                                                <a href="{{ url_for('teacher.grade_submission', submission_id=submission.id) }}" class="btn btn-sm btn-primary">Grade</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if more_submissions %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('teacher.submissions') }}" class="btn btn-outline-primary">View All Submissions</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-check fa-3x mb-3 text-secondary"></i>
+                            <h5>No pending submissions to grade</h5>
+                            <p>You're all caught up!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Activity -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Student Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if student_activities %}
+                        <ul class="list-group list-group-flush">
+                            {% for activity in student_activities %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if activity.type == 'enrollment' %}
+                                            <i class="fas fa-user-plus text-info mr-2"></i>
+                                            <strong>{{ activity.student.first_name }} {{ activity.student.last_name }}</strong> enrolled in 
+                                            <a href="{{ url_for('teacher.course_detail', course_id=activity.course.id) }}">{{ activity.course.title }}</a>
+                                        {% elif activity.type == 'lesson_completion' %}
+                                            <i class="fas fa-check-circle text-success mr-2"></i>
+                                            <strong>{{ activity.student.first_name }} {{ activity.student.last_name }}</strong> completed lesson 
+                                            <strong>{{ activity.lesson.title }}</strong> in 
+                                            <a href="{{ url_for('teacher.course_detail', course_id=activity.course.id) }}">{{ activity.course.title }}</a>
+                                        {% elif activity.type == 'submission' %}
+                                            <i class="fas fa-paper-plane text-primary mr-2"></i>
+                                            <strong>{{ activity.student.first_name }} {{ activity.student.last_name }}</strong> submitted 
+                                            <strong>{{ activity.assignment.title }}</strong> for 
+                                            <a href="{{ url_for('teacher.course_detail', course_id=activity.course.id) }}">{{ activity.course.title }}</a>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ activity.timestamp.strftime('%b %d, %H:%M') }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-history fa-3x mb-3 text-secondary"></i>
+                            <h5>No recent student activity</h5>
+                            <p>Student activities will appear here as they engage with your courses</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Analytics -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Course Analytics</h5>
+                </div>
+                <div class="card-body">
+                    {% if courses %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Enrollment Trends</h6>
+                                <div class="chart-container" style="position: relative; height:250px;">
+                                    <canvas id="enrollmentChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Course Completion Rates</h6>
+                                <div class="chart-container" style="position: relative; height:250px;">
+                                    <canvas id="completionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x mb-3 text-secondary"></i>
+                            <h5>No analytics available</h5>
+                            <p>Analytics will be available once you create courses and have student enrollments</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if courses %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enrollment Chart
+        const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
+        const enrollmentChart = new Chart(enrollmentCtx, {
+            type: 'line',
+            data: {
+                labels: {{ enrollment_data.labels|tojson }},
+                datasets: [{
+                    label: 'New Enrollments',
+                    data: {{ enrollment_data.values|tojson }},
+                    backgroundColor: 'rgba(74, 107, 175, 0.2)',
+                    borderColor: 'rgba(74, 107, 175, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Completion Chart
+        const completionCtx = document.getElementById('completionChart').getContext('2d');
+        const completionChart = new Chart(completionCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ completion_data.labels|tojson }},
+                datasets: [{
+                    label: 'Completion Rate (%)',
+                    data: {{ completion_data.values|tojson }},
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.7)',
+                        'rgba(74, 107, 175, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(23, 162, 184, 0.7)',
+                        'rgba(108, 117, 125, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(40, 167, 69, 1)',
+                        'rgba(74, 107, 175, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(108, 117, 125, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %} 
