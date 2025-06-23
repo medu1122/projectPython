@@ -1,65 +1,103 @@
 {% extends "layout.html" %}
 
-{% block title %}AI Learning Assistant - LMS{% endblock %}
+{% block title %}AI Chatbot - Learning Management System{% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="row mb-4">
-        <div class="col">
-            <h1>AI Learning Assistant</h1>
-            <p>Get help with your courses, assignments, and learning questions.</p>
-        </div>
-    </div>
-
     <div class="row">
         <div class="col">
-            <div class="chatbot-container" data-session-id="{{ current_session.id }}">
-                <div class="chatbot-sidebar">
-                    <div class="chatbot-sidebar-header">
-                        <h5 class="chatbot-sidebar-title">Your Sessions</h5>
-                        <button class="btn btn-sm btn-primary" id="new-session-btn">
-                            <i class="fas fa-plus"></i> New Session
-                        </button>
-                    </div>
-                    <ul class="chatbot-sessions">
-                        {% for session in sessions %}
-                            <li class="chatbot-session {% if session.id == current_session.id %}active{% endif %}" data-session-id="{{ session.id }}">
-                                <div class="chatbot-session-title">{{ session.title }}</div>
-                                <div class="chatbot-session-date">{{ session.created_at.strftime('%b %d, %Y') }}</div>
-                            </li>
-                        {% endfor %}
-                    </ul>
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="card-title">AI Learning Assistant</h2>
+                    <a href="/" class="btn btn-sm btn-outline-primary">Back to Home</a>
                 </div>
-                <div class="chatbot-main">
-                    <div class="chatbot-messages">
-                        {% for message in current_session.messages %}
-                            <div class="chatbot-message {% if message.is_user %}chatbot-message-user{% else %}chatbot-message-ai{% endif %}">
-                                <div class="chatbot-message-content">{{ message.content }}</div>
-                                <div class="chatbot-message-time">{{ message.created_at.strftime('%H:%M') }}</div>
+                <div class="card-body p-0">
+                    <div class="chatbot-container">
+                        <div class="chatbot-sidebar">
+                            <div class="chatbot-sidebar-header">
+                                <h4 class="chatbot-sidebar-title">Chat History</h4>
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="fas fa-plus"></i> New Chat
+                                </button>
                             </div>
-                        {% endfor %}
-                        
-                        {% if not current_session.messages %}
-                            <div class="chatbot-welcome">
-                                <div class="chatbot-welcome-icon">
-                                    <i class="fas fa-robot"></i>
+                            <div class="chatbot-sessions">
+                                <div class="chatbot-session active">
+                                    <div class="chatbot-session-title">Python Help</div>
+                                    <div class="chatbot-session-date">Today, 10:45 AM</div>
                                 </div>
-                                <h3>Hello, {{ current_user.first_name }}!</h3>
-                                <p>I'm your AI learning assistant. How can I help you today?</p>
-                                <div class="chatbot-suggestions">
-                                    <button class="btn btn-outline-primary btn-sm suggestion-btn">Explain the concept of object-oriented programming</button>
-                                    <button class="btn btn-outline-primary btn-sm suggestion-btn">Help me understand database normalization</button>
-                                    <button class="btn btn-outline-primary btn-sm suggestion-btn">What are the best practices for web security?</button>
-                                    <button class="btn btn-outline-primary btn-sm suggestion-btn">How do I debug my Python code?</button>
+                                <div class="chatbot-session">
+                                    <div class="chatbot-session-title">Data Structures</div>
+                                    <div class="chatbot-session-date">Yesterday</div>
+                                </div>
+                                <div class="chatbot-session">
+                                    <div class="chatbot-session-title">Flask Project Help</div>
+                                    <div class="chatbot-session-date">Oct 10, 2023</div>
+                                </div>
+                                <div class="chatbot-session">
+                                    <div class="chatbot-session-title">Math Problem</div>
+                                    <div class="chatbot-session-date">Oct 5, 2023</div>
                                 </div>
                             </div>
-                        {% endif %}
-                    </div>
-                    <div class="chatbot-input">
-                        <input type="text" class="chatbot-input-field" placeholder="Type your message here...">
-                        <button class="chatbot-input-button">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
+                        </div>
+                        <div class="chatbot-main">
+                            <div class="chatbot-messages">
+                                <div class="chatbot-message chatbot-message-ai">
+                                    <div class="chatbot-message-content">
+                                        <p>Hello! I'm your AI learning assistant. How can I help you today?</p>
+                                    </div>
+                                    <div class="chatbot-message-time">10:45 AM</div>
+                                </div>
+                                <div class="chatbot-message chatbot-message-user">
+                                    <div class="chatbot-message-content">
+                                        <p>I'm having trouble understanding Python list comprehensions. Can you explain them?</p>
+                                    </div>
+                                    <div class="chatbot-message-time">10:46 AM</div>
+                                </div>
+                                <div class="chatbot-message chatbot-message-ai">
+                                    <div class="chatbot-message-content">
+                                        <p>List comprehensions are a concise way to create lists in Python. They consist of brackets containing an expression followed by a for clause, then zero or more for or if clauses.</p>
+                                        <p>Here's a simple example:</p>
+                                        <pre><code># Creating a list of squares using list comprehension
+squares = [x**2 for x in range(10)]
+print(squares)  # Output: [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</code></pre>
+                                        <p>You can also add conditions:</p>
+                                        <pre><code># Creating a list of even squares
+even_squares = [x**2 for x in range(10) if x % 2 == 0]
+print(even_squares)  # Output: [0, 4, 16, 36, 64]</code></pre>
+                                        <p>Would you like me to explain more complex examples?</p>
+                                    </div>
+                                    <div class="chatbot-message-time">10:47 AM</div>
+                                </div>
+                                <div class="chatbot-message chatbot-message-user">
+                                    <div class="chatbot-message-content">
+                                        <p>Yes, can you show me how to use nested list comprehensions?</p>
+                                    </div>
+                                    <div class="chatbot-message-time">10:48 AM</div>
+                                </div>
+                                <div class="chatbot-message chatbot-message-ai">
+                                    <div class="chatbot-message-content">
+                                        <p>Nested list comprehensions are list comprehensions within list comprehensions. They're useful for working with multi-dimensional data structures.</p>
+                                        <p>Here's an example of creating a 3x3 matrix:</p>
+                                        <pre><code># Creating a 3x3 matrix using nested list comprehension
+matrix = [[i*3+j+1 for j in range(3)] for i in range(3)]
+print(matrix)  # Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9]]</code></pre>
+                                        <p>You can also flatten a 2D list into a 1D list:</p>
+                                        <pre><code># Flattening a 2D list
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+flattened = [num for row in matrix for num in row]
+print(flattened)  # Output: [1, 2, 3, 4, 5, 6, 7, 8, 9]</code></pre>
+                                        <p>Is there a specific use case you're interested in?</p>
+                                    </div>
+                                    <div class="chatbot-message-time">10:49 AM</div>
+                                </div>
+                            </div>
+                            <div class="chatbot-input">
+                                <input type="text" class="chatbot-input-field" placeholder="Type your message here...">
+                                <button class="chatbot-input-button">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -68,419 +106,87 @@
 </div>
 {% endblock %}
 
-{% block styles %}
-<style>
-    .chatbot-container {
-        display: flex;
-        height: 70vh;
-        min-height: 500px;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        background-color: #fff;
-        margin-bottom: 30px;
-    }
-    
-    .chatbot-sidebar {
-        width: 250px;
-        background-color: #f5f5f5;
-        border-right: 1px solid #eee;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .chatbot-sidebar-header {
-        padding: 15px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .chatbot-sidebar-title {
-        margin: 0;
-        font-size: 1rem;
-    }
-    
-    .chatbot-sessions {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        overflow-y: auto;
-        flex-grow: 1;
-    }
-    
-    .chatbot-session {
-        padding: 15px;
-        cursor: pointer;
-        border-bottom: 1px solid #eee;
-        transition: background-color 0.3s ease;
-    }
-    
-    .chatbot-session:hover,
-    .chatbot-session.active {
-        background-color: rgba(74, 107, 175, 0.1);
-    }
-    
-    .chatbot-session-title {
-        font-weight: 500;
-        margin-bottom: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .chatbot-session-date {
-        font-size: 0.8rem;
-        color: var(--secondary-color);
-    }
-    
-    .chatbot-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .chatbot-messages {
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .chatbot-message {
-        max-width: 80%;
-        margin-bottom: 15px;
-        padding: 12px 16px;
-        border-radius: 18px;
-        position: relative;
-    }
-    
-    .chatbot-message-user {
-        align-self: flex-end;
-        background-color: var(--primary-color);
-        color: white;
-        border-radius: 18px 18px 0 18px;
-    }
-    
-    .chatbot-message-ai {
-        align-self: flex-start;
-        background-color: #f1f1f1;
-        color: var(--body-color);
-        border-radius: 18px 18px 18px 0;
-    }
-    
-    .chatbot-message-content {
-        word-break: break-word;
-    }
-    
-    .chatbot-message-time {
-        font-size: 0.7rem;
-        margin-top: 5px;
-        text-align: right;
-    }
-    
-    .chatbot-message-user .chatbot-message-time {
-        color: rgba(255, 255, 255, 0.7);
-    }
-    
-    .chatbot-message-ai .chatbot-message-time {
-        color: var(--secondary-color);
-    }
-    
-    .chatbot-input {
-        display: flex;
-        padding: 15px;
-        background-color: #f5f5f5;
-        border-top: 1px solid #eee;
-    }
-    
-    .chatbot-input-field {
-        flex: 1;
-        padding: 12px 15px;
-        border: 1px solid #ddd;
-        border-radius: 24px;
-        outline: none;
-        font-size: 1rem;
-    }
-    
-    .chatbot-input-field:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 2px rgba(74, 107, 175, 0.2);
-    }
-    
-    .chatbot-input-button {
-        background-color: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 46px;
-        height: 46px;
-        margin-left: 10px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.3s ease;
-    }
-    
-    .chatbot-input-button:hover {
-        background-color: #3a5a9e;
-    }
-    
-    .chatbot-welcome {
-        align-self: center;
-        text-align: center;
-        max-width: 600px;
-        margin: auto;
-    }
-    
-    .chatbot-welcome-icon {
-        font-size: 3rem;
-        color: var(--primary-color);
-        margin-bottom: 20px;
-    }
-    
-    .chatbot-welcome h3 {
-        margin-bottom: 10px;
-    }
-    
-    .chatbot-welcome p {
-        margin-bottom: 20px;
-        color: var(--secondary-color);
-    }
-    
-    .chatbot-suggestions {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 20px;
-    }
-    
-    .suggestion-btn {
-        margin-bottom: 10px;
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .chatbot-container {
-            flex-direction: column;
-            height: 80vh;
-        }
-        
-        .chatbot-sidebar {
-            width: 100%;
-            height: 200px;
-            border-right: none;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .chatbot-message {
-            max-width: 90%;
-        }
-    }
-    
-    /* Dark mode adjustments */
-    .dark-mode .chatbot-container {
-        background-color: var(--dark-color);
-    }
-    
-    .dark-mode .chatbot-sidebar {
-        background-color: #2c3035;
-        border-color: #444;
-    }
-    
-    .dark-mode .chatbot-sidebar-header {
-        border-color: #444;
-    }
-    
-    .dark-mode .chatbot-session {
-        border-color: #444;
-    }
-    
-    .dark-mode .chatbot-session:hover,
-    .dark-mode .chatbot-session.active {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .dark-mode .chatbot-message-ai {
-        background-color: #3a3a3a;
-        color: #e0e0e0;
-    }
-    
-    .dark-mode .chatbot-input {
-        background-color: #2c3035;
-        border-color: #444;
-    }
-    
-    .dark-mode .chatbot-input-field {
-        background-color: #3a3a3a;
-        border-color: #444;
-        color: #e0e0e0;
-    }
-</style>
-{% endblock %}
-
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const messageInput = document.querySelector('.chatbot-input-field');
+        const chatInput = document.querySelector('.chatbot-input-field');
         const sendButton = document.querySelector('.chatbot-input-button');
         const messagesContainer = document.querySelector('.chatbot-messages');
-        const chatbotContainer = document.querySelector('.chatbot-container');
-        const newSessionButton = document.getElementById('new-session-btn');
-        const suggestionButtons = document.querySelectorAll('.suggestion-btn');
         
-        // Send message function
-        function sendMessage() {
-            const message = messageInput.value.trim();
-            if (message === '') return;
-            
-            // Add user message to UI
-            addMessage(message, true);
-            
-            // Clear input
-            messageInput.value = '';
-            
-            // Get session ID
-            const sessionId = chatbotContainer.getAttribute('data-session-id');
-            
-            // Send message to backend
-            fetch('/api/chatbot/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    message: message
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Add AI response to UI
-                addMessage(data.ai_message.content, false);
-                
-                // Update session title if this is the first message
-                if (data.session_updated) {
-                    updateSessionTitle(sessionId, data.session_title);
-                }
-                
-                // Scroll to bottom
-                scrollToBottom();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                addMessage('Sorry, there was an error processing your request.', false);
-            });
-        }
-        
-        // Add message to UI
+        // Function to add a new message
         function addMessage(content, isUser) {
-            // Remove welcome message if present
-            const welcomeMessage = document.querySelector('.chatbot-welcome');
-            if (welcomeMessage) {
-                welcomeMessage.remove();
-            }
-            
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('chatbot-message');
-            messageElement.classList.add(isUser ? 'chatbot-message-user' : 'chatbot-message-ai');
-            
-            const contentElement = document.createElement('div');
-            contentElement.classList.add('chatbot-message-content');
-            contentElement.textContent = content;
-            
-            const timeElement = document.createElement('div');
-            timeElement.classList.add('chatbot-message-time');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chatbot-message');
+            messageDiv.classList.add(isUser ? 'chatbot-message-user' : 'chatbot-message-ai');
             
             const now = new Date();
-            timeElement.textContent = now.getHours().toString().padStart(2, '0') + ':' + 
-                                     now.getMinutes().toString().padStart(2, '0');
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
             
-            messageElement.appendChild(contentElement);
-            messageElement.appendChild(timeElement);
+            messageDiv.innerHTML = `
+                <div class="chatbot-message-content">
+                    <p>${content}</p>
+                </div>
+                <div class="chatbot-message-time">${timeString}</div>
+            `;
             
-            messagesContainer.appendChild(messageElement);
+            messagesContainer.appendChild(messageDiv);
             
             // Scroll to bottom
-            scrollToBottom();
-        }
-        
-        // Update session title
-        function updateSessionTitle(sessionId, title) {
-            const sessionElement = document.querySelector(`.chatbot-session[data-session-id="${sessionId}"]`);
-            if (sessionElement) {
-                const titleElement = sessionElement.querySelector('.chatbot-session-title');
-                if (titleElement) {
-                    titleElement.textContent = title;
-                }
-            }
-        }
-        
-        // Scroll messages to bottom
-        function scrollToBottom() {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
-        // Create new session
-        function createNewSession() {
-            fetch('/api/chatbot/new-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = `/student/chatbot?session_id=${data.session_id}`;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to create new session');
-            });
+        // Sample responses for demo
+        const sampleResponses = [
+            "That's a great question! Let me explain that concept in more detail...",
+            "I understand your question. Here's how you can approach this problem...",
+            "Based on your course materials, I would recommend the following approach...",
+            "Let me provide you with an example that illustrates this concept...",
+            "There are several ways to solve this. One effective method is..."
+        ];
+        
+        // Function to get a random response
+        function getRandomResponse() {
+            const randomIndex = Math.floor(Math.random() * sampleResponses.length);
+            return sampleResponses[randomIndex];
+        }
+        
+        // Handle sending messages
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message === '') return;
+            
+            // Add user message
+            addMessage(message, true);
+            
+            // Clear input
+            chatInput.value = '';
+            
+            // Simulate AI response (after a short delay)
+            setTimeout(() => {
+                addMessage(getRandomResponse(), false);
+            }, 1000);
         }
         
         // Event listeners
-        if (sendButton) {
-            sendButton.addEventListener('click', sendMessage);
-        }
+        sendButton.addEventListener('click', sendMessage);
         
-        if (messageInput) {
-            messageInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-        }
-        
-        if (newSessionButton) {
-            newSessionButton.addEventListener('click', createNewSession);
-        }
-        
-        // Session switching
-        const sessionItems = document.querySelectorAll('.chatbot-session');
-        sessionItems.forEach(item => {
-            item.addEventListener('click', function() {
-                const sessionId = this.getAttribute('data-session-id');
-                window.location.href = `/student/chatbot?session_id=${sessionId}`;
-            });
-        });
-        
-        // Suggestion buttons
-        suggestionButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                messageInput.value = this.textContent;
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
                 sendMessage();
-            });
+            }
         });
         
-        // Initial scroll to bottom
-        scrollToBottom();
+        // Initialize chat sessions
+        const chatSessions = document.querySelectorAll('.chatbot-session');
+        chatSessions.forEach(session => {
+            session.addEventListener('click', function() {
+                // Remove active class from all sessions
+                chatSessions.forEach(s => s.classList.remove('active'));
+                // Add active class to clicked session
+                this.classList.add('active');
+            });
+        });
     });
 </script>
 {% endblock %} 

@@ -22,35 +22,18 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <a href="{{ url_for('main.index') }}" class="header-brand">
+        <a href="/" class="header-brand">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="LMS Logo">
             <span>Learning Management System</span>
         </a>
         
         <nav class="header-nav">
-            {% if current_user.is_authenticated %}
-                {% if current_user.role.name == 'ADMIN' %}
-                    <a href="{{ url_for('admin.dashboard') }}" class="header-nav-item">Dashboard</a>
-                {% elif current_user.role.name == 'TEACHER' %}
-                    <a href="{{ url_for('teacher.dashboard') }}" class="header-nav-item">Dashboard</a>
-                {% elif current_user.role.name == 'STUDENT' %}
-                    <a href="{{ url_for('student.dashboard') }}" class="header-nav-item">Dashboard</a>
-                {% endif %}
-                
-                <a href="{{ url_for('auth.profile') }}" class="header-nav-item">
-                    <i class="fas fa-user"></i> Profile
-                </a>
-                <a href="{{ url_for('auth.logout') }}" class="header-nav-item">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-            {% else %}
-                <a href="{{ url_for('auth.login') }}" class="header-nav-item">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </a>
-                <a href="{{ url_for('auth.register') }}" class="header-nav-item">
-                    <i class="fas fa-user-plus"></i> Register
-                </a>
-            {% endif %}
+            <a href="/login" class="header-nav-item">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+            <a href="/register" class="header-nav-item">
+                <i class="fas fa-user-plus"></i> Register
+            </a>
             
             <a href="#" class="header-nav-item dark-mode-toggle">
                 <i class="fas fa-moon"></i>
@@ -60,110 +43,43 @@
     
     <!-- Main Content -->
     <div class="main-content">
-        {% if current_user.is_authenticated %}
-            <!-- Sidebar -->
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    {% if current_user.role.name == 'ADMIN' %}
-                        Admin Menu
-                    {% elif current_user.role.name == 'TEACHER' %}
-                        Teacher Menu
-                    {% elif current_user.role.name == 'STUDENT' %}
-                        Student Menu
-                    {% endif %}
-                </div>
-                
-                <ul class="sidebar-menu">
-                    {% if current_user.role.name == 'ADMIN' %}
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-menu-link">
-                                <i class="fas fa-tachometer-alt sidebar-menu-icon"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('admin.users') }}" class="sidebar-menu-link">
-                                <i class="fas fa-users sidebar-menu-icon"></i> Users
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('admin.courses') }}" class="sidebar-menu-link">
-                                <i class="fas fa-book sidebar-menu-icon"></i> Courses
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('admin.system_settings') }}" class="sidebar-menu-link">
-                                <i class="fas fa-cogs sidebar-menu-icon"></i> Settings
-                            </a>
-                        </li>
-                    {% elif current_user.role.name == 'TEACHER' %}
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('teacher.dashboard') }}" class="sidebar-menu-link">
-                                <i class="fas fa-tachometer-alt sidebar-menu-icon"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('teacher.courses') }}" class="sidebar-menu-link">
-                                <i class="fas fa-book sidebar-menu-icon"></i> My Courses
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('teacher.course_assignments', course_id=0) }}" class="sidebar-menu-link">
-                                <i class="fas fa-tasks sidebar-menu-icon"></i> Assignments
-                            </a>
-                        </li>
-                    {% elif current_user.role.name == 'STUDENT' %}
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('student.dashboard') }}" class="sidebar-menu-link">
-                                <i class="fas fa-tachometer-alt sidebar-menu-icon"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('student.courses') }}" class="sidebar-menu-link">
-                                <i class="fas fa-book sidebar-menu-icon"></i> My Courses
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('student.assignments') }}" class="sidebar-menu-link">
-                                <i class="fas fa-tasks sidebar-menu-icon"></i> Assignments
-                            </a>
-                        </li>
-                        <li class="sidebar-menu-item">
-                            <a href="{{ url_for('student.chatbot') }}" class="sidebar-menu-link">
-                                <i class="fas fa-robot sidebar-menu-icon"></i> AI Assistant
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </aside>
-            
-            <!-- Sidebar Toggle Button -->
-            <div class="sidebar-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-        {% endif %}
-        
         <!-- Content Area -->
-        <div class="content {% if not current_user.is_authenticated %}content-full{% endif %}">
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
+        <div class="content content-full">
             <!-- Main Content Block -->
-            {% block content %}{% endblock %}
+            {% block content %}
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">Welcome to Learning Management System</h2>
+                            </div>
+                            <div class="card-body">
+                                <p>This is a frontend-only implementation of a Learning Management System.</p>
+                                <p>You can explore the UI by clicking on the links in the header.</p>
+                                
+                                <div class="mt-4">
+                                    <h3>Demo Access</h3>
+                                    <div class="d-flex flex-wrap">
+                                        <a href="/student/dashboard" class="btn btn-primary mr-2 mb-2">Student Dashboard</a>
+                                        <a href="/teacher/dashboard" class="btn btn-success mr-2 mb-2">Teacher Dashboard</a>
+                                        <a href="/admin/dashboard" class="btn btn-danger mr-2 mb-2">Admin Dashboard</a>
+                                        <a href="/chatbot" class="btn btn-info mr-2 mb-2">AI Chatbot</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
         </div>
     </div>
     
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; {{ now.year }} Learning Management System. All rights reserved.</p>
+            <p>&copy; 2023 Learning Management System. All rights reserved.</p>
         </div>
     </footer>
     

@@ -1,9 +1,80 @@
-# Learning Management System
+# Learning Management System (Frontend Only)
 
-A comprehensive Learning Management System (LMS) built with Flask and modern web technologies.
+This is a frontend-only implementation of a Learning Management System built with Flask. It provides a UI demonstration of the system without any backend functionality.
 
 ## Features
 
+- User interface for students, teachers, and administrators
+- Course display and navigation
+- Assignment viewing
+- AI Chatbot interface
+- Dark mode support
+- Responsive design
+
+## Installation
+
+1. Clone the repository:
+```
+git clone https://github.com/yourusername/flask-boilerplate.git
+cd flask-boilerplate
+```
+
+2. Create and activate a virtual environment:
+```
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install the required packages:
+```
+pip install -r requirements.txt
+```
+
+4. Run the application:
+```
+python run.py
+```
+
+5. Open your browser and navigate to:
+```
+http://localhost:5000
+```
+
+## Demo Access
+
+The application provides demonstration access to different user roles:
+
+- **Student Dashboard**: http://localhost:5000/student/dashboard
+- **Teacher Dashboard**: http://localhost:5000/teacher/dashboard
+- **Admin Dashboard**: http://localhost:5000/admin/dashboard
+- **AI Chatbot**: http://localhost:5000/chatbot
+
+## Project Structure
+
+```
+flask-boilerplate/
+├── app.py                  # Main application file
+├── config.py               # Configuration settings
+├── requirements.txt        # Project dependencies
+├── run.py                  # Application entry point
+├── static/                 # Static files (CSS, JS, images)
+│   ├── css/                # CSS files
+│   ├── js/                 # JavaScript files
+│   └── img/                # Images and icons
+└── templates/              # HTML templates
+    ├── admin/              # Admin templates
+    ├── student/            # Student templates
+    ├── teacher/            # Teacher templates
+    ├── errors/             # Error pages
+    ├── layout.html         # Base template
+    ├── login.html          # Login page
+    ├── register.html       # Registration page
+    └── chatbot.html        # AI Chatbot page
+```
+
+## Note
+
+This is a frontend-only implementation meant for UI demonstration purposes. No actual backend functionality (database, authentication, etc.) is implemented. User interactions are simulated with JavaScript. 
 - **User Management**
   - Role-based access control (Student, Teacher, Admin)
   - User authentication and authorization
