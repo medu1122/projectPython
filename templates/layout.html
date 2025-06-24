@@ -17,6 +17,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     
+    {% block additional_styles %}{% endblock %}
     {% block styles %}{% endblock %}
 </head>
 <body>
