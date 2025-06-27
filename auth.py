@@ -16,7 +16,7 @@ def register():
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
         
         new_user = User(
-            name=form.username.data,
+            name=form.username.data,  # Use username as name
             email=form.email.data,
             password=hashed_password,
             role=form.role.data,

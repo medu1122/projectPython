@@ -1,9 +1,14 @@
 from flask import Flask, render_template
 from database.config import db, app
 from auth import auth
+from database.heath import heath, init_db
 
 # Register blueprints
 app.register_blueprint(auth)
+app.register_blueprint(heath)
+
+# Khởi tạo cơ sở dữ liệu
+init_db(app)
 
 # Remove duplicate routes now handled by auth blueprint
 @app.route('/')
@@ -27,7 +32,4 @@ def chatbot():
     return render_template('chatbot.html')
 
 if __name__ == '__main__':
-    # Create all database tables
-    with app.app_context():
-        db.create_all()
     app.run(debug=True) 
