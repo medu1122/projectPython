@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import login_user, logout_user, login_required, current_user
 from database.config import db
 from database.model import User
-from forms import RegistrationForm
+from forms import RegistrationForm, LoginForm
 from datetime import datetime
 
 auth = Blueprint('auth', __name__)
@@ -16,11 +17,11 @@ def register():
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
         
         new_user = User(
-            name=form.username.data,  # Use username as name
+            name=f"{form.first_name.data} {form.last_name.data}",  # Combine first and last name
             email=form.email.data,
             password=hashed_password,
             role=form.role.data,
-            create_at=datetime.now(),
+            created_at=datetime.now(),
             is_active=True
         )
         
@@ -41,5 +42,45 @@ def register():
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
-    # Placeholder for login route
-    return render_template('login.html', title='Login') 
+    # Redirect if user is already logged in
+    if current_user.is_authenticated:
+        return redirect_user_by_role(current_user.role)
+    
+    form = LoginForm()
+    
+    if form.validate_on_submit():
+        # Find user by email
+        user = User.query.filter_by(email=form.email.data).first()
+        
+        # Check if user exists and password is correct
+        if user and check_password_hash(user.password, form.password.data):
+            # Check if user is active
+            if user.is_active:
+                # Login user
+                login_user(user, remember=form.remember_me.data)
+                flash(f'Welcome back, {user.name}!', 'success')
+                
+                # Redirect to appropriate dashboard based on role
+                return redirect_user_by_role(user.role)
+            else:
+                flash('Your account has been deactivated. Please contact support.', 'warning')
+        else:
+            flash('Invalid email or password. Please try again.', 'danger')
+    
+    return render_template('login.html', form=form, title='Login')
+
+@auth.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out successfully.', 'info')
+    return redirect(url_for('auth.login'))
+
+def redirect_user_by_role(role):
+    """Redirect user to appropriate dashboard based on their role"""
+    if role == 'admin':
+        return redirect(url_for('admin_dashboard'))
+    elif role == 'teacher':
+        return redirect(url_for('teacher_dashboard'))
+    else:  # student or any other role
+        return redirect(url_for('student_dashboard')) 

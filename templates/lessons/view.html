@@ -1,0 +1,369 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ lesson.title }} - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Lesson Content -->
+        <div class="col-md-9">
+            <div class="lesson-container">
+                <!-- Lesson Header -->
+                <div class="lesson-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item">
+                                        <a href="{{ url_for('courses.detail', course_id=course.id) }}">{{ course.title }}</a>
+                                    </li>
+                                    <li class="breadcrumb-item">
+                                        <a href="{{ url_for('lessons.course_curriculum', course_id=course.id) }}">Curriculum</a>
+                                    </li>
+                                    <li class="breadcrumb-item active">{{ lesson.title }}</li>
+                                </ol>
+                            </nav>
+                            <h1 class="lesson-title">{{ lesson.title }}</h1>
+                            {% if lesson.description %}
+                                <p class="lesson-description">{{ lesson.description }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if current_user.role == 'student' and user_progress %}
+                            <div class="lesson-status">
+                                {% if user_progress.is_completed %}
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check mr-1"></i>Completed
+                                    </span>
+                                {% else %}
+                                    <button class="btn btn-success btn-sm" onclick="markLessonComplete({{ lesson.id }})">
+                                        <i class="fas fa-check mr-1"></i>Mark Complete
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Lesson Content -->
+                <div class="lesson-content">
+                    {% if lesson.contents %}
+                        {% for content in lesson.contents %}
+                            <div class="content-section">
+                                {% if content.title %}
+                                    <h3 class="content-title">{{ content.title }}</h3>
+                                {% endif %}
+                                
+                                {% if content.content_type == 'text' %}
+                                    <div class="text-content">
+                                        {{ content.content|safe }}
+                                    </div>
+                                
+                                {% elif content.content_type == 'video' %}
+                                    <div class="video-content">
+                                        <div class="video-placeholder">
+                                            <i class="fas fa-play-circle fa-4x"></i>
+                                            <p>Video content would be displayed here</p>
+                                            <small class="text-muted">{{ content.content }}</small>
+                                        </div>
+                                    </div>
+                                
+                                {% elif content.content_type == 'code_exercise' %}
+                                    <div class="code-content">
+                                        <div class="code-header">
+                                            <h5><i class="fas fa-code mr-2"></i>Code Exercise</h5>
+                                        </div>
+                                        <div class="code-editor">
+                                            <pre><code>{{ content.content }}</code></pre>
+                                        </div>
+                                        <div class="code-actions mt-3">
+                                            <button class="btn btn-primary btn-sm">
+                                                <i class="fas fa-play mr-1"></i>Run Code
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-copy mr-1"></i>Copy
+                                            </button>
+                                        </div>
+                                    </div>
+                                
+                                {% elif content.content_type == 'file' %}
+                                    <div class="file-content">
+                                        <div class="file-download">
+                                            <i class="fas fa-download fa-2x"></i>
+                                            <p>Download: {{ content.title }}</p>
+                                            {% if content.file_path %}
+                                                <a href="{{ url_for('static', filename=content.file_path) }}" 
+                                                   class="btn btn-primary" download>
+                                                    <i class="fas fa-download mr-1"></i>Download File
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                
+                                {% else %}
+                                    <div class="generic-content">
+                                        <p>{{ content.content }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-content">
+                            <i class="fas fa-exclamation-circle fa-3x text-muted"></i>
+                            <h4>Content Coming Soon</h4>
+                            <p>This lesson content is being prepared by the instructor.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Lesson Navigation -->
+                <div class="lesson-navigation mt-5">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if prev_lesson %}
+                                <a href="{{ url_for('lessons.view_lesson', lesson_id=prev_lesson.id) }}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-chevron-left mr-1"></i>Previous: {{ prev_lesson.title }}
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {% if next_lesson %}
+                                <a href="{{ url_for('lessons.view_lesson', lesson_id=next_lesson.id) }}" 
+                                   class="btn btn-primary">
+                                    Next: {{ next_lesson.title }} <i class="fas fa-chevron-right ml-1"></i>
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('lessons.course_curriculum', course_id=course.id) }}" 
+                                   class="btn btn-success">
+                                    <i class="fas fa-graduation-cap mr-1"></i>Course Complete!
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="lesson-sidebar">
+                <!-- Progress Card -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Lesson Info</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="lesson-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-tag"></i>
+                                <span>{{ lesson.lesson_type.title() }}</span>
+                            </div>
+                            {% if lesson.duration_minutes %}
+                                <div class="meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ lesson.duration_minutes }} minutes</span>
+                                </div>
+                            {% endif %}
+                            {% if user_progress %}
+                                <div class="meta-item">
+                                    <i class="fas fa-percentage"></i>
+                                    <span>{{ user_progress.completion_percentage|int }}% complete</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Course Progress -->
+                {% if current_user.role == 'student' %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Course Progress</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" 
+                                     style="width: {{ course.get_user_progress(current_user.id) }}%">
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                {{ course.get_user_progress(current_user.id)|int }}% of course completed
+                            </small>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Quick Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <a href="{{ url_for('lessons.course_curriculum', course_id=course.id) }}" 
+                           class="btn btn-outline-primary btn-sm btn-block mb-2">
+                            <i class="fas fa-list mr-1"></i>View Curriculum
+                        </a>
+                        <a href="{{ url_for('courses.detail', course_id=course.id) }}" 
+                           class="btn btn-outline-secondary btn-sm btn-block">
+                            <i class="fas fa-arrow-left mr-1"></i>Back to Course
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.lesson-container {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.lesson-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #eee;
+}
+
+.lesson-title {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.lesson-description {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.lesson-content {
+    min-height: 400px;
+}
+
+.content-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.content-section:last-child {
+    border-bottom: none;
+}
+
+.content-title {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.text-content {
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+
+.video-content .video-placeholder {
+    background: #f8f9fa;
+    border: 2px dashed #ddd;
+    border-radius: 10px;
+    padding: 3rem;
+    text-align: center;
+    color: #666;
+}
+
+.code-content {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.code-editor {
+    background: #282c34;
+    color: #abb2bf;
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.code-editor pre {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.file-content .file-download {
+    background: #e9ecef;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.no-content {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.lesson-navigation {
+    border-top: 2px solid #eee;
+    padding-top: 1.5rem;
+}
+
+.lesson-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+.lesson-meta .meta-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.lesson-meta .meta-item i {
+    width: 20px;
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.lesson-status .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function markLessonComplete(lessonId) {
+    fetch(`/lessons/${lessonId}/complete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update UI
+            location.reload(); // Simple reload for now
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to mark lesson as complete');
+    });
+}
+</script>
+{% endblock %} 

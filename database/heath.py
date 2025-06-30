@@ -56,7 +56,17 @@ def init_db(app):
         # Kiểm tra kết nối
         if check_db_connection():
             print("DB Connected: TRUE")
-            db.create_all()
+            try:
+                # Cố gắng tạo bảng, bỏ qua nếu đã tồn tại
+                db.create_all()
+                print("DB Tables: CREATED/VERIFIED")
+            except Exception as e:
+                # Nếu bảng đã tồn tại, chỉ in warning
+                if "already an object named" in str(e):
+                    print("DB Tables: ALREADY EXIST - SKIPPING")
+                else:
+                    print(f"DB Tables: ERROR - {e}")
+                    # Vẫn có thể tiếp tục nếu bảng đã tồn tại
             _is_initialized = True
             return True
         else:

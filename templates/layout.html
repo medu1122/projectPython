@@ -29,12 +29,52 @@
         </a>
         
         <nav class="header-nav">
-            <a href="/login" class="header-nav-item">
-                <i class="fas fa-sign-in-alt"></i> Login
+            <!-- Courses link available for everyone -->
+            <a href="{{ url_for('courses.index') }}" class="header-nav-item">
+                <i class="fas fa-book"></i> Courses
             </a>
-            <a href="/register" class="header-nav-item">
-                <i class="fas fa-user-plus"></i> Register
-            </a>
+            
+            {% if current_user.is_authenticated %}
+                <!-- User is logged in -->
+                <div class="header-nav-item user-info">
+                    <i class="fas fa-user"></i>
+                    <span>{{ current_user.name }}</span>
+                    <span class="user-role">({{ current_user.role.title() }})</span>
+                </div>
+                
+                <a href="{{ url_for('courses.my_courses') }}" class="header-nav-item">
+                    <i class="fas fa-graduation-cap"></i> My Courses
+                </a>
+                
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="header-nav-item">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                {% elif current_user.role == 'teacher' %}
+                    <a href="{{ url_for('teacher_dashboard') }}" class="header-nav-item">
+                        <i class="fas fa-chalkboard-teacher"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('courses.manage') }}" class="header-nav-item">
+                        <i class="fas fa-cogs"></i> Manage
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('student_dashboard') }}" class="header-nav-item">
+                        <i class="fas fa-graduation-cap"></i> Dashboard
+                    </a>
+                {% endif %}
+                
+                <a href="{{ url_for('auth.logout') }}" class="header-nav-item logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            {% else %}
+                <!-- User is not logged in -->
+                <a href="{{ url_for('auth.login') }}" class="header-nav-item">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="header-nav-item">
+                    <i class="fas fa-user-plus"></i> Register
+                </a>
+            {% endif %}
             
             <a href="#" class="header-nav-item dark-mode-toggle">
                 <i class="fas fa-moon"></i>
@@ -56,18 +96,40 @@
                                 <h2 class="card-title">Welcome to Learning Management System</h2>
                             </div>
                             <div class="card-body">
-                                <p>This is a frontend-only implementation of a Learning Management System.</p>
-                                <p>You can explore the UI by clicking on the links in the header.</p>
-                                
-                                <div class="mt-4">
-                                    <h3>Demo Access</h3>
-                                    <div class="d-flex flex-wrap">
-                                        <a href="/student/dashboard" class="btn btn-primary mr-2 mb-2">Student Dashboard</a>
-                                        <a href="/teacher/dashboard" class="btn btn-success mr-2 mb-2">Teacher Dashboard</a>
-                                        <a href="/admin/dashboard" class="btn btn-danger mr-2 mb-2">Admin Dashboard</a>
-                                        <a href="/chatbot" class="btn btn-info mr-2 mb-2">AI Chatbot</a>
+                                {% if current_user.is_authenticated %}
+                                    <p>Welcome back, <strong>{{ current_user.name }}</strong>!</p>
+                                    <p>You are logged in as: <span class="badge badge-primary">{{ current_user.role.title() }}</span></p>
+                                    
+                                    <div class="mt-4">
+                                        <h3>Quick Actions</h3>
+                                        <div class="d-flex flex-wrap">
+                                            <a href="{{ url_for('courses.index') }}" class="btn btn-primary mr-2 mb-2">Browse Courses</a>
+                                            <a href="{{ url_for('courses.my_courses') }}" class="btn btn-success mr-2 mb-2">My Courses</a>
+                                            {% if current_user.role == 'admin' %}
+                                                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-danger mr-2 mb-2">Admin Dashboard</a>
+                                            {% elif current_user.role == 'teacher' %}
+                                                <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-success mr-2 mb-2">Teacher Dashboard</a>
+                                                <a href="{{ url_for('courses.manage') }}" class="btn btn-warning mr-2 mb-2">Manage Courses</a>
+                                            {% else %}
+                                                <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary mr-2 mb-2">Student Dashboard</a>
+                                            {% endif %}
+                                            <a href="{{ url_for('chatbot') }}" class="btn btn-info mr-2 mb-2">AI Chatbot</a>
+                                        </div>
                                     </div>
-                                </div>
+                                {% else %}
+                                    <p>This is a Learning Management System.</p>
+                                    <p>Please log in to access your dashboard and course materials.</p>
+                                    
+                                    <div class="mt-4">
+                                        <h3>Get Started</h3>
+                                        <div class="d-flex flex-wrap">
+                                            <a href="{{ url_for('courses.index') }}" class="btn btn-primary mr-2 mb-2">Browse Courses</a>
+                                            <a href="{{ url_for('auth.login') }}" class="btn btn-success mr-2 mb-2">Login</a>
+                                            <a href="{{ url_for('auth.register') }}" class="btn btn-warning mr-2 mb-2">Register</a>
+                                            <a href="{{ url_for('chatbot') }}" class="btn btn-info mr-2 mb-2">AI Chatbot</a>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

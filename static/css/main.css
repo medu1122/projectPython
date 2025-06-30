@@ -160,6 +160,36 @@ p {
   text-decoration: none;
 }
 
+/* User info styles in header */
+.header-nav .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: white;
+    font-weight: 500;
+}
+
+.header-nav .user-info .user-role {
+    font-size: 0.85em;
+    opacity: 0.8;
+    font-weight: 400;
+}
+
+.header-nav .logout-btn {
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.header-nav .logout-btn:hover {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.5);
+}
+
 /* Main content */
 .main-content {
   flex: 1;
@@ -479,8 +509,8 @@ p {
 /* Badges */
 .badge {
   display: inline-block;
-  padding: 0.25em 0.4em;
-  font-size: 75%;
+  padding: 0.25em 0.6em;
+  font-size: 0.75em;
   font-weight: 700;
   line-height: 1;
   text-align: center;
@@ -490,8 +520,8 @@ p {
 }
 
 .badge-primary {
-  background-color: var(--primary-color);
-  color: white;
+  color: #fff;
+  background-color: #007bff;
 }
 
 .badge-secondary {
@@ -605,6 +635,15 @@ p {
   }
   
   .header-brand span {
+    display: none;
+  }
+  
+  .header-nav .user-info {
+    font-size: 0.9em;
+    padding: 6px 10px;
+  }
+  
+  .header-nav .user-info .user-role {
     display: none;
   }
 }

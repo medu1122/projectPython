@@ -1,0 +1,244 @@
+{% extends "layout.html" %}
+
+{% block title %}My Courses - Teacher{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>My Courses
+                </h1>
+                <p class="page-subtitle">Manage your teaching courses</p>
+            </div>
+
+            {% if courses %}
+                <div class="row">
+                    {% for course in courses %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card course-card h-100">
+                                <div class="card-img-top-wrapper">
+                                    {% if course.thumbnail %}
+                                        <img src="{{ url_for('static', filename='uploads/course_images/' + course.thumbnail) }}" 
+                                             class="card-img-top" alt="{{ course.title }}">
+                                    {% else %}
+                                        <div class="card-img-placeholder">
+                                            <i class="fas fa-book fa-3x"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="status-badge">
+                                        <span class="badge badge-{{ 'success' if course.is_active else 'secondary' }}">
+                                            {{ 'Active' if course.is_active else 'Inactive' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ course.title }}</h5>
+                                    <p class="card-text flex-grow-1">
+                                        {{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}
+                                    </p>
+                                    
+                                    <div class="course-stats mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="stat-item">
+                                                    <div class="stat-number">{{ course.student_count }}</div>
+                                                    <div class="stat-label">Students</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="stat-item">
+                                                    <div class="stat-number">{{ course.average_progress|int }}%</div>
+                                                    <div class="stat-label">Avg Progress</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="stat-item">
+                                                    <div class="stat-number">{{ course.level|title }}</div>
+                                                    <div class="stat-label">Level</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="course-meta mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-tag mr-1"></i>{{ course.category.name }}<br>
+                                            <i class="fas fa-calendar mr-1"></i>Created: {{ course.created_at.strftime('%B %d, %Y') }}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        <div class="btn-group w-100" role="group">
+                                            <a href="{{ url_for('courses.detail', course_id=course.id) }}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="{{ url_for('courses.course_students', course_id=course.id) }}" 
+                                               class="btn btn-outline-success">
+                                                <i class="fas fa-users"></i> Students
+                                            </a>
+                                            <a href="#" class="btn btn-outline-warning">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ courses|length }}</div>
+                            <div class="stat-label">Total Courses</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ courses|selectattr('is_active')|list|length }}</div>
+                            <div class="stat-label">Active Courses</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ courses|sum(attribute='student_count') }}</div>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ ((courses|sum(attribute='average_progress') / courses|length)|int) if courses else 0 }}%</div>
+                            <div class="stat-label">Avg Progress</div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
+                    <h3>No Courses Yet</h3>
+                    <p class="text-muted">You haven't created any courses yet. Start teaching today!</p>
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-plus mr-1"></i>Create Your First Course
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.course-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.card-img-top-wrapper {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-img-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.course-stats {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.stat-item .stat-number {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #007bff;
+}
+
+.stat-item .stat-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.course-meta {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 1px solid #f0f0f0;
+}
+
+.stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-label {
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    color: #333;
+    font-weight: 600;
+}
+
+.page-subtitle {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+</style>
+{% endblock %> 

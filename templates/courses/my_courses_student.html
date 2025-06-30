@@ -1,0 +1,232 @@
+{% extends "layout.html" %}
+
+{% block title %}My Courses - Student{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-graduation-cap mr-2"></i>My Courses
+                </h1>
+                <p class="page-subtitle">Track your learning progress</p>
+            </div>
+
+            {% if enrollments %}
+                <div class="row">
+                    {% for enrollment in enrollments %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card course-card h-100">
+                                <div class="card-img-top-wrapper">
+                                    {% if enrollment.course.thumbnail %}
+                                        <img src="{{ url_for('static', filename='uploads/course_images/' + enrollment.course.thumbnail) }}" 
+                                             class="card-img-top" alt="{{ enrollment.course.title }}">
+                                    {% else %}
+                                        <div class="card-img-placeholder">
+                                            <i class="fas fa-book fa-3x"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="progress-overlay">
+                                        <div class="progress-circle">
+                                            <span class="progress-text">{{ enrollment.progress|int }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">{{ enrollment.course.title }}</h5>
+                                    <p class="card-text flex-grow-1">
+                                        {{ enrollment.course.description[:100] }}{% if enrollment.course.description|length > 100 %}...{% endif %}
+                                    </p>
+                                    
+                                    <div class="course-progress mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small class="text-muted">Progress</small>
+                                            <small class="text-muted">{{ enrollment.progress_percentage }}</small>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar 
+                                                {% if enrollment.progress >= 100 %}bg-success
+                                                {% elif enrollment.progress >= 70 %}bg-warning  
+                                                {% else %}bg-primary{% endif %}" 
+                                                 style="width: {{ enrollment.progress }}%"
+                                                 aria-valuenow="{{ enrollment.progress }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="course-meta mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user mr-1"></i>{{ enrollment.course.teacher.name }}<br>
+                                            <i class="fas fa-calendar mr-1"></i>Enrolled: {{ enrollment.enrolled_at.strftime('%B %d, %Y') }}<br>
+                                            <i class="fas fa-signal mr-1"></i>{{ enrollment.course.level.title() }} Level
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mt-auto">
+                                        {% if enrollment.is_completed %}
+                                            <a href="{{ url_for('courses.detail', course_id=enrollment.course.id) }}" 
+                                               class="btn btn-success btn-block">
+                                                <i class="fas fa-check mr-1"></i>Completed
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ url_for('courses.detail', course_id=enrollment.course.id) }}" 
+                                               class="btn btn-primary btn-block">
+                                                <i class="fas fa-play mr-1"></i>Continue Learning
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ enrollments|length }}</div>
+                            <div class="stat-label">Total Courses</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ enrollments|selectattr('is_completed')|list|length }}</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ ((enrollments|sum(attribute='progress') / enrollments|length)|int) if enrollments else 0 }}%</div>
+                            <div class="stat-label">Average Progress</div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-graduation-cap fa-3x text-muted mb-3"></i>
+                    <h3>No Enrolled Courses</h3>
+                    <p class="text-muted">You haven't enrolled in any courses yet. Start learning today!</p>
+                    <a href="{{ url_for('courses.index') }}" class="btn btn-primary">
+                        <i class="fas fa-search mr-1"></i>Browse Courses
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.course-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.card-img-top-wrapper {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-img-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.progress-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.progress-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.progress-text {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #333;
+}
+
+.course-progress .progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.course-meta {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 1px solid #f0f0f0;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    color: #333;
+    font-weight: 600;
+}
+
+.page-subtitle {
+    color: #666;
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %} 

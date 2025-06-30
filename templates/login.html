@@ -11,22 +11,55 @@
                     <h2 class="card-title">Login</h2>
                 </div>
                 <div class="card-body">
-                    <form>
-                        <div class="form-group">
-                            <label for="email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div class="flash-messages mb-3">
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' if category == 'success' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="Enter your email") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.email.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="form-group">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password">
+                        
+                        <div class="form-group mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control", placeholder="Enter your password") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
+                        
                         <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="remember">
-                            <label class="form-check-label" for="remember">Remember me</label>
+                            {{ form.remember_me(class="form-check-input") }}
+                            {{ form.remember_me.label(class="form-check-label") }}
                         </div>
+                        
                         <div class="d-flex justify-content-between align-items-center">
-                            <a href="/register" class="text-primary">Don't have an account? Register</a>
-                            <button type="button" class="btn btn-primary" onclick="simulateLogin()">Login</button>
+                            <a href="{{ url_for('auth.register') }}" class="text-primary">Don't have an account? Register</a>
+                            {{ form.submit(class="btn btn-primary") }}
                         </div>
                     </form>
                 </div>
@@ -34,27 +67,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    function simulateLogin() {
-        // Get the email value
-        const email = document.getElementById('email').value;
-        
-        if (!email) {
-            alert('Please enter an email address');
-            return;
-        }
-        
-        // Simulate login based on email domain
-        if (email.includes('admin')) {
-            window.location.href = '/admin/dashboard';
-        } else if (email.includes('teacher')) {
-            window.location.href = '/teacher/dashboard';
-        } else {
-            window.location.href = '/student/dashboard';
-        }
-    }
-</script>
 {% endblock %} 
