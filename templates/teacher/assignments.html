@@ -1,0 +1,260 @@
+{% extends "layout.html" %}
+
+{% block title %}Quản lý bài tập - Hệ thống học PERL & PYTHON{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Quản lý bài tập</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal">
+                    <i class="fas fa-plus"></i> Tạo bài tập mới
+                </button>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Filter Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('teacher.assignments') }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <select class="form-select" name="course_id">
+                                    <option value="">Tất cả khóa học</option>
+                                    {% for course in courses %}
+                                        <option value="{{ course.id }}">{{ course.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" name="type">
+                                    <option value="">Tất cả loại</option>
+                                    <option value="code">Bài tập code</option>
+                                    <option value="quiz">Trắc nghiệm</option>
+                                    <option value="file">Upload file</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-filter"></i> Lọc
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Assignments Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tên bài tập</th>
+                                    <th>Khóa học</th>
+                                    <th>Loại</th>
+                                    <th>Hạn nộp</th>
+                                    <th>Đã nộp</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in assignments %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('teacher.assignment_detail', id=assignment.id) }}">
+                                            {{ assignment.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ assignment.course.name }}</td>
+                                    <td>
+                                        {% if assignment.type == 'code' %}
+                                            <span class="badge bg-primary">Code</span>
+                                        {% elif assignment.type == 'quiz' %}
+                                            <span class="badge bg-info">Trắc nghiệm</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Upload</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ assignment.due_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ assignment.submissions | length }}/{{ assignment.course.students | length }}</td>
+                                    <td>
+                                        {% if assignment.is_active %}
+                                            <span class="badge bg-success">Đang mở</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Đã đóng</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('teacher.grade_assignment', id=assignment.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" title="Chấm điểm">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-warning" 
+                                                    onclick="editAssignment({{ assignment.id }})" title="Sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deleteAssignment({{ assignment.id }})" title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Chưa có bài tập nào</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Assignment Modal -->
+<div class="modal fade" id="createAssignmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo bài tập mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('teacher.create_assignment') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {{ form.hidden_tag() if form }}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Tiêu đề bài tập</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="course_id" class="form-label">Khóa học</label>
+                            <select class="form-select" id="course_id" name="course_id" required>
+                                <option value="">Chọn khóa học</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="type" class="form-label">Loại bài tập</label>
+                            <select class="form-select" id="type" name="type" required onchange="toggleTypeFields()">
+                                <option value="">Chọn loại</option>
+                                <option value="code">Bài tập code</option>
+                                <option value="quiz">Trắc nghiệm</option>
+                                <option value="file">Upload file</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                    </div>
+                    
+                    <!-- Code Assignment Fields -->
+                    <div id="codeFields" style="display:none;">
+                        <div class="mb-3">
+                            <label for="language" class="form-label">Ngôn ngữ lập trình</label>
+                            <select class="form-select" id="language" name="language">
+                                <option value="python">Python</option>
+                                <option value="perl">Perl</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="test_cases" class="form-label">Test cases (JSON format)</label>
+                            <textarea class="form-control" id="test_cases" name="test_cases" rows="3" 
+                                      placeholder='[{"input": "5", "output": "25"}, {"input": "10", "output": "100"}]'></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- File Assignment Fields -->
+                    <div id="fileFields" style="display:none;">
+                        <div class="mb-3">
+                            <label for="allowed_extensions" class="form-label">Định dạng cho phép</label>
+                            <input type="text" class="form-control" id="allowed_extensions" name="allowed_extensions" 
+                                   placeholder="pdf,docx,zip">
+                        </div>
+                        <div class="mb-3">
+                            <label for="max_file_size" class="form-label">Kích thước tối đa (MB)</label>
+                            <input type="number" class="form-control" id="max_file_size" name="max_file_size" 
+                                   value="10" min="1" max="50">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="due_date" class="form-label">Hạn nộp</label>
+                            <input type="datetime-local" class="form-control" id="due_date" name="due_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max_score" class="form-label">Điểm tối đa</label>
+                            <input type="number" class="form-control" id="max_score" name="max_score" 
+                                   value="100" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="attachment" class="form-label">File đính kèm (tùy chọn)</label>
+                        <input type="file" class="form-control" id="attachment" name="attachment">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Tạo bài tập
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTypeFields() {
+    const type = document.getElementById('type').value;
+    document.getElementById('codeFields').style.display = type === 'code' ? 'block' : 'none';
+    document.getElementById('fileFields').style.display = type === 'file' ? 'block' : 'none';
+}
+
+function editAssignment(id) {
+    // TODO: Load assignment data and show edit modal
+    alert('Chức năng sửa bài tập #' + id);
+}
+
+function deleteAssignment(id) {
+    if (confirm('Bạn có chắc muốn xóa bài tập này?')) {
+        fetch(`/teacher/assignment/${id}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

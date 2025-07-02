@@ -1,0 +1,259 @@
+{% extends "layout.html" %}
+
+{% block title %}Chấm điểm - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('teacher.assignments') }}">Bài tập</a></li>
+            <li class="breadcrumb-item active">Chấm điểm: {{ assignment.title }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3>{{ assignment.title }}</h3>
+            <p class="text-muted">{{ assignment.course.name }} - Hạn nộp: {{ assignment.due_date.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4>{{ total_students }}</h4>
+                    <small class="text-muted">Tổng sinh viên</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-success">{{ submitted_count }}</h4>
+                    <small class="text-muted">Đã nộp</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-primary">{{ graded_count }}</h4>
+                    <small class="text-muted">Đã chấm</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-warning">{{ pending_count }}</h4>
+                    <small class="text-muted">Chờ chấm</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submissions List -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Danh sách bài nộp</h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="autoGradeAll()">
+                        <i class="fas fa-robot"></i> Chấm tự động
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="exportGrades()">
+                        <i class="fas fa-download"></i> Xuất điểm
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sinh viên</th>
+                            <th>Thời gian nộp</th>
+                            <th>Trạng thái</th>
+                            <th>Điểm</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for submission in submissions %}
+                        <tr>
+                            <td>
+                                <strong>{{ submission.student.fullname }}</strong><br>
+                                <small class="text-muted">{{ submission.student.username }}</small>
+                            </td>
+                            <td>
+                                {{ submission.submitted_at.strftime('%d/%m/%Y %H:%M') }}
+                                {% if submission.is_late %}
+                                    <br><span class="badge bg-danger">Trễ hạn</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if submission.is_graded %}
+                                    <span class="badge bg-success">Đã chấm</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Chờ chấm</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if submission.is_graded %}
+                                    <strong>{{ submission.score }}/{{ assignment.max_score }}</strong>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="gradeSubmission({{ submission.id }})">
+                                    <i class="fas fa-edit"></i> Chấm điểm
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Chưa có bài nộp nào</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grade Submission Modal -->
+<div class="modal fade" id="gradeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chấm điểm bài nộp</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="submissionContent">
+                    <!-- Content will be loaded here -->
+                </div>
+                
+                <hr>
+                
+                <form id="gradeForm">
+                    <input type="hidden" id="submissionId" name="submission_id">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="score" class="form-label">Điểm</label>
+                            <input type="number" class="form-control" id="score" name="score" 
+                                   min="0" max="{{ assignment.max_score }}" required>
+                            <div class="form-text">Điểm tối đa: {{ assignment.max_score }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Chấm nhanh</label>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                        onclick="setScore({{ assignment.max_score }})">100%</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="setScore({{ assignment.max_score * 0.8 }})">80%</button>
+                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                        onclick="setScore({{ assignment.max_score * 0.6 }})">60%</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="setScore(0)">0%</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feedback" class="form-label">Phản hồi</label>
+                        <textarea class="form-control" id="feedback" name="feedback" rows="4" 
+                                  placeholder="Nhập phản hồi cho sinh viên..."></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="useAI" name="use_ai">
+                        <label class="form-check-label" for="useAI">
+                            Sử dụng AI để gợi ý phản hồi
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveGrade()">
+                    <i class="fas fa-save"></i> Lưu điểm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let gradeModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    gradeModal = new bootstrap.Modal(document.getElementById('gradeModal'));
+});
+
+function gradeSubmission(submissionId) {
+    // Load submission content
+    fetch(`/teacher/submission/${submissionId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('submissionId').value = submissionId;
+            document.getElementById('submissionContent').innerHTML = data.content;
+            
+            if (data.score !== null) {
+                document.getElementById('score').value = data.score;
+                document.getElementById('feedback').value = data.feedback || '';
+            }
+            
+            gradeModal.show();
+        });
+}
+
+function setScore(score) {
+    document.getElementById('score').value = Math.round(score);
+}
+
+function saveGrade() {
+    const formData = new FormData(document.getElementById('gradeForm'));
+    
+    fetch('/teacher/grade', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            gradeModal.hide();
+            location.reload();
+        } else {
+            alert('Lỗi: ' + data.error);
+        }
+    });
+}
+
+function autoGradeAll() {
+    if (confirm('Chấm điểm tự động cho tất cả bài code dựa trên test cases?')) {
+        fetch(`/teacher/assignment/{{ assignment.id }}/auto-grade`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Đã chấm tự động ${data.graded_count} bài`);
+                location.reload();
+            }
+        });
+    }
+}
+
+function exportGrades() {
+    window.location.href = `/teacher/assignment/{{ assignment.id }}/export-grades`;
+}
+</script>
+{% endblock %} 

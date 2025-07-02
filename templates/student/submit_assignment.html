@@ -1,0 +1,282 @@
+{% extends "layout.html" %}
+
+{% block title %}Nộp bài tập - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('student.assignments') }}">Bài tập</a></li>
+                    <li class="breadcrumb-item active">{{ assignment.title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">{{ assignment.title }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p><strong>Khóa học:</strong> {{ assignment.course.name }}</p>
+                            <p><strong>Loại bài tập:</strong> 
+                                <span class="badge bg-{{ 'primary' if assignment.type == 'code' else 'info' if assignment.type == 'quiz' else 'secondary' }}">
+                                    {{ assignment.type | title }}
+                                </span>
+                            </p>
+                            <p><strong>Mô tả:</strong></p>
+                            <div class="bg-light p-3 rounded">
+                                {{ assignment.description | safe }}
+                            </div>
+                            
+                            {% if assignment.attachment %}
+                            <p class="mt-3">
+                                <strong>File đính kèm:</strong>
+                                <a href="{{ url_for('student.download_attachment', id=assignment.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i> Tải xuống
+                                </a>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Thông tin nộp bài</h5>
+                                    <p><strong>Hạn nộp:</strong><br>
+                                        <span class="{{ 'text-danger' if assignment.is_overdue else '' }}">
+                                            {{ assignment.due_date.strftime('%d/%m/%Y %H:%M') }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Điểm tối đa:</strong> {{ assignment.max_score }}</p>
+                                    <p><strong>Trạng thái:</strong><br>
+                                        {% if existing_submission %}
+                                            <span class="badge bg-success">Đã nộp</span>
+                                            <small class="d-block mt-1">
+                                                {{ existing_submission.submitted_at.strftime('%d/%m/%Y %H:%M') }}
+                                            </small>
+                                        {% else %}
+                                            <span class="badge bg-warning">Chưa nộp</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Submission Form based on assignment type -->
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Nộp bài</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('student.submit_assignment', id=assignment.id) }}" 
+                          enctype="multipart/form-data" id="submissionForm">
+                        {{ form.hidden_tag() if form }}
+                        
+                        {% if assignment.type == 'code' %}
+                        <!-- Code Editor for Programming Assignments -->
+                        <div class="mb-3">
+                            <label class="form-label">Ngôn ngữ lập trình: <strong>{{ assignment.language | upper }}</strong></label>
+                            <div class="border rounded" style="height: 400px;">
+                                <textarea name="code" id="codeEditor" class="form-control" 
+                                          style="height: 100%; font-family: monospace;"
+                                          placeholder="// Nhập code của bạn ở đây..."
+                                          required>{{ existing_submission.content if existing_submission else '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-secondary w-100" onclick="runCode()">
+                                    <i class="fas fa-play"></i> Chạy thử
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-info w-100" onclick="saveAsDraft()">
+                                    <i class="fas fa-save"></i> Lưu nháp
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Code Output -->
+                        <div class="mb-3" id="outputSection" style="display:none;">
+                            <label class="form-label">Kết quả chạy thử:</label>
+                            <pre class="bg-dark text-white p-3 rounded" id="codeOutput"></pre>
+                        </div>
+                        
+                        {% elif assignment.type == 'quiz' %}
+                        <!-- Quiz Questions -->
+                        <div class="quiz-container">
+                            {% for question in assignment.questions %}
+                            <div class="mb-4 p-3 border rounded">
+                                <h6>Câu {{ loop.index }}: {{ question.text }}</h6>
+                                {% if question.type == 'multiple_choice' %}
+                                    {% for option in question.options %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" 
+                                               name="question_{{ question.id }}" 
+                                               id="q{{ question.id }}_opt{{ loop.index }}" 
+                                               value="{{ option.id }}" required>
+                                        <label class="form-check-label" for="q{{ question.id }}_opt{{ loop.index }}">
+                                            {{ option.text }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                {% elif question.type == 'text' %}
+                                    <input type="text" class="form-control" 
+                                           name="question_{{ question.id }}" 
+                                           placeholder="Nhập câu trả lời..." required>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% else %}
+                        <!-- File Upload -->
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Chọn file để nộp</label>
+                            <input type="file" class="form-control" id="file" name="file" required
+                                   accept="{{ assignment.allowed_extensions }}">
+                            <div class="form-text">
+                                Định dạng cho phép: {{ assignment.allowed_extensions }}<br>
+                                Kích thước tối đa: {{ assignment.max_file_size }}MB
+                            </div>
+                        </div>
+                        
+                        {% if existing_submission %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Bạn đã nộp file: {{ existing_submission.filename }}
+                            <a href="{{ url_for('student.download_submission', id=existing_submission.id) }}" 
+                               class="btn btn-sm btn-outline-primary float-end">
+                                <i class="fas fa-download"></i> Tải xuống
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Ghi chú (tùy chọn)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Thêm ghi chú cho giảng viên...">{{ existing_submission.notes if existing_submission else '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" 
+                                    {% if assignment.is_overdue %}disabled{% endif %}>
+                                <i class="fas fa-paper-plane"></i> 
+                                {% if existing_submission %}Nộp lại{% else %}Nộp bài{% endif %}
+                            </button>
+                            
+                            {% if assignment.is_overdue %}
+                            <div class="alert alert-danger text-center">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                Đã quá hạn nộp bài!
+                            </div>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+{% if assignment.type == 'code' %}
+// Initialize code editor with syntax highlighting
+document.addEventListener('DOMContentLoaded', function() {
+    // You can integrate CodeMirror or Monaco Editor here
+    const editor = document.getElementById('codeEditor');
+    
+    // Simple tab support
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 4;
+        }
+    });
+});
+
+function runCode() {
+    const code = document.getElementById('codeEditor').value;
+    const outputSection = document.getElementById('outputSection');
+    const codeOutput = document.getElementById('codeOutput');
+    
+    outputSection.style.display = 'block';
+    codeOutput.textContent = 'Đang chạy code...';
+    
+    // Send code to backend for execution
+    fetch('{{ url_for("student.run_code") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code: code,
+            language: '{{ assignment.language }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            codeOutput.textContent = data.output;
+        } else {
+            codeOutput.textContent = 'Error: ' + data.error;
+        }
+    })
+    .catch(error => {
+        codeOutput.textContent = 'Lỗi kết nối: ' + error;
+    });
+}
+
+function saveAsDraft() {
+    const code = document.getElementById('codeEditor').value;
+    
+    fetch('{{ url_for("student.save_draft", id=assignment.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code: code,
+            notes: document.getElementById('notes').value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Đã lưu nháp thành công!');
+        } else {
+            alert('Lỗi khi lưu nháp: ' + data.error);
+        }
+    });
+}
+{% endif %}
+
+// Confirm before submitting
+document.getElementById('submissionForm').addEventListener('submit', function(e) {
+    if (!confirm('Bạn có chắc chắn muốn nộp bài?')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %} 

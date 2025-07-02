@@ -1,0 +1,233 @@
+{% extends "layout.html" %}
+
+{% block title %}Đánh giá khóa học - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('courses.my_courses') }}">Khóa học của tôi</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('courses.detail', id=course.id) }}">{{ course.name }}</a></li>
+                    <li class="breadcrumb-item active">Đánh giá</li>
+                </ol>
+            </nav>
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Đánh giá khóa học: {{ course.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Ý kiến của bạn rất quan trọng để giúp chúng tôi cải thiện chất lượng khóa học.
+                    </p>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('student.submit_rating', course_id=course.id) }}">
+                        {{ form.hidden_tag() if form }}
+                        
+                        <!-- Overall Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Đánh giá tổng quan</label>
+                            <div class="star-rating" id="overallRating">
+                                <i class="fas fa-star" data-rating="1"></i>
+                                <i class="fas fa-star" data-rating="2"></i>
+                                <i class="fas fa-star" data-rating="3"></i>
+                                <i class="fas fa-star" data-rating="4"></i>
+                                <i class="fas fa-star" data-rating="5"></i>
+                            </div>
+                            <input type="hidden" name="overall_rating" id="overall_rating" value="{{ existing_rating.overall_rating or 0 }}" required>
+                            <small class="text-muted">Click vào sao để đánh giá</small>
+                        </div>
+                        
+                        <!-- Detailed Ratings -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Nội dung bài giảng</label>
+                                <div class="star-rating small" id="contentRating">
+                                    <i class="fas fa-star" data-rating="1"></i>
+                                    <i class="fas fa-star" data-rating="2"></i>
+                                    <i class="fas fa-star" data-rating="3"></i>
+                                    <i class="fas fa-star" data-rating="4"></i>
+                                    <i class="fas fa-star" data-rating="5"></i>
+                                </div>
+                                <input type="hidden" name="content_rating" id="content_rating" value="{{ existing_rating.content_rating or 0 }}">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Giảng viên</label>
+                                <div class="star-rating small" id="teacherRating">
+                                    <i class="fas fa-star" data-rating="1"></i>
+                                    <i class="fas fa-star" data-rating="2"></i>
+                                    <i class="fas fa-star" data-rating="3"></i>
+                                    <i class="fas fa-star" data-rating="4"></i>
+                                    <i class="fas fa-star" data-rating="5"></i>
+                                </div>
+                                <input type="hidden" name="teacher_rating" id="teacher_rating" value="{{ existing_rating.teacher_rating or 0 }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Độ khó phù hợp</label>
+                                <div class="star-rating small" id="difficultyRating">
+                                    <i class="fas fa-star" data-rating="1"></i>
+                                    <i class="fas fa-star" data-rating="2"></i>
+                                    <i class="fas fa-star" data-rating="3"></i>
+                                    <i class="fas fa-star" data-rating="4"></i>
+                                    <i class="fas fa-star" data-rating="5"></i>
+                                </div>
+                                <input type="hidden" name="difficulty_rating" id="difficulty_rating" value="{{ existing_rating.difficulty_rating or 0 }}">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Tính thực tiễn</label>
+                                <div class="star-rating small" id="practicalRating">
+                                    <i class="fas fa-star" data-rating="1"></i>
+                                    <i class="fas fa-star" data-rating="2"></i>
+                                    <i class="fas fa-star" data-rating="3"></i>
+                                    <i class="fas fa-star" data-rating="4"></i>
+                                    <i class="fas fa-star" data-rating="5"></i>
+                                </div>
+                                <input type="hidden" name="practical_rating" id="practical_rating" value="{{ existing_rating.practical_rating or 0 }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Feedback Text -->
+                        <div class="mb-4">
+                            <label for="comment" class="form-label fw-bold">Nhận xét chi tiết</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="5" 
+                                      placeholder="Chia sẻ trải nghiệm của bạn về khóa học này...">{{ existing_rating.comment or '' }}</textarea>
+                        </div>
+                        
+                        <!-- What you liked -->
+                        <div class="mb-4">
+                            <label for="liked" class="form-label">Điều bạn thích nhất về khóa học</label>
+                            <textarea class="form-control" id="liked" name="liked" rows="2" 
+                                      placeholder="Ví dụ: Bài giảng rõ ràng, nhiều ví dụ thực tế...">{{ existing_rating.liked or '' }}</textarea>
+                        </div>
+                        
+                        <!-- Suggestions -->
+                        <div class="mb-4">
+                            <label for="improvements" class="form-label">Góp ý cải thiện</label>
+                            <textarea class="form-control" id="improvements" name="improvements" rows="2" 
+                                      placeholder="Ví dụ: Thêm bài tập, cập nhật nội dung...">{{ existing_rating.improvements or '' }}</textarea>
+                        </div>
+                        
+                        <!-- Recommend -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="would_recommend" name="would_recommend"
+                                       {% if existing_rating and existing_rating.would_recommend %}checked{% endif %}>
+                                <label class="form-check-label" for="would_recommend">
+                                    Tôi sẽ giới thiệu khóa học này cho người khác
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 
+                                {% if existing_rating %}Cập nhật đánh giá{% else %}Gửi đánh giá{% endif %}
+                            </button>
+                            <a href="{{ url_for('courses.detail', id=course.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.star-rating {
+    font-size: 2rem;
+    color: #ddd;
+    cursor: pointer;
+}
+
+.star-rating.small {
+    font-size: 1.5rem;
+}
+
+.star-rating i {
+    transition: color 0.2s;
+}
+
+.star-rating i:hover,
+.star-rating i.active {
+    color: #ffc107;
+}
+
+.star-rating i.filled {
+    color: #ffc107;
+}
+</style>
+
+<script>
+// Star rating functionality
+document.querySelectorAll('.star-rating').forEach(rating => {
+    const stars = rating.querySelectorAll('i');
+    const input = document.getElementById(rating.id.replace('Rating', '_rating'));
+    
+    // Set initial rating
+    if (input.value > 0) {
+        for (let i = 0; i < input.value; i++) {
+            stars[i].classList.add('filled');
+        }
+    }
+    
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            const ratingValue = index + 1;
+            input.value = ratingValue;
+            
+            // Update visual state
+            stars.forEach((s, i) => {
+                if (i < ratingValue) {
+                    s.classList.add('filled');
+                } else {
+                    s.classList.remove('filled');
+                }
+            });
+        });
+        
+        star.addEventListener('mouseenter', () => {
+            stars.forEach((s, i) => {
+                if (i <= index) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    rating.addEventListener('mouseleave', () => {
+        stars.forEach(s => s.classList.remove('active'));
+    });
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const overallRating = document.getElementById('overall_rating').value;
+    if (!overallRating || overallRating == 0) {
+        e.preventDefault();
+        alert('Vui lòng chọn đánh giá tổng quan!');
+    }
+});
+</script>
+{% endblock %} 

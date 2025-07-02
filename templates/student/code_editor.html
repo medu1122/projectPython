@@ -1,0 +1,181 @@
+{% extends "layout.html" %}
+
+{% block title %}Thực hành Code Online - Hệ thống học PERL & PYTHON{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>Thực hành Code Online</h3>
+                <div>
+                    <select id="languageSelect" class="form-select form-select-sm d-inline-block w-auto">
+                        <option value="python" selected>Python</option>
+                        <option value="perl">Perl</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary ms-2" onclick="runCode()">
+                        <i class="fas fa-play"></i> Chạy
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="clearCode()">
+                        <i class="fas fa-eraser"></i> Xóa
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="loadExample()">
+                        <i class="fas fa-lightbulb"></i> Ví dụ
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fas fa-code"></i> Code Editor
+                        </div>
+                        <div class="card-body p-0">
+                            <textarea id="codeEditor" class="form-control border-0" 
+                                      style="height: 500px; font-family: 'Courier New', monospace; font-size: 14px;"
+                                      placeholder="# Nhập code của bạn ở đây..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <i class="fas fa-terminal"></i> Kết quả
+                        </div>
+                        <div class="card-body">
+                            <pre id="output" class="bg-dark text-white p-3 rounded" style="min-height: 450px; max-height: 450px; overflow-y: auto;">Kết quả sẽ hiển thị ở đây...</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>Hướng dẫn sử dụng:</h5>
+                            <ul>
+                                <li>Chọn ngôn ngữ lập trình (Python hoặc Perl)</li>
+                                <li>Nhập code vào khung bên trái</li>
+                                <li>Nhấn nút "Chạy" để xem kết quả</li>
+                                <li>Sử dụng nút "Ví dụ" để xem code mẫu</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const pythonExample = `# Ví dụ Python: Tính giai thừa
+def factorial(n):
+    if n == 0 or n == 1:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+# Test
+number = 5
+result = factorial(number)
+print(f"Giai thừa của {number} là: {result}")
+
+# In bảng cửu chương
+print("\\nBảng cửu chương 5:")
+for i in range(1, 11):
+    print(f"5 x {i} = {5 * i}")`;
+
+const perlExample = `#!/usr/bin/perl
+# Ví dụ Perl: Tính giai thừa
+
+sub factorial {
+    my $n = shift;
+    return 1 if $n <= 1;
+    return $n * factorial($n - 1);
+}
+
+# Test
+my $number = 5;
+my $result = factorial($number);
+print "Giai thừa của $number là: $result\\n";
+
+# In bảng cửu chương
+print "\\nBảng cửu chương 5:\\n";
+for (my $i = 1; $i <= 10; $i++) {
+    print "5 x $i = " . (5 * $i) . "\\n";
+}`;
+
+function runCode() {
+    const code = document.getElementById('codeEditor').value;
+    const language = document.getElementById('languageSelect').value;
+    const output = document.getElementById('output');
+    
+    if (!code.trim()) {
+        output.textContent = 'Vui lòng nhập code!';
+        return;
+    }
+    
+    output.textContent = 'Đang chạy code...';
+    
+    fetch('/api/run-code', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code: code,
+            language: language
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            output.textContent = data.output || 'Code chạy thành công nhưng không có output.';
+        } else {
+            output.textContent = 'Error:\n' + (data.error || 'Lỗi không xác định');
+        }
+    })
+    .catch(error => {
+        output.textContent = 'Lỗi kết nối: ' + error.message;
+    });
+}
+
+function clearCode() {
+    if (confirm('Bạn có chắc muốn xóa toàn bộ code?')) {
+        document.getElementById('codeEditor').value = '';
+        document.getElementById('output').textContent = 'Kết quả sẽ hiển thị ở đây...';
+    }
+}
+
+function loadExample() {
+    const language = document.getElementById('languageSelect').value;
+    const editor = document.getElementById('codeEditor');
+    
+    if (language === 'python') {
+        editor.value = pythonExample;
+    } else {
+        editor.value = perlExample;
+    }
+}
+
+// Run code on Ctrl+Enter
+document.getElementById('codeEditor').addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        runCode();
+    }
+    
+    // Tab support
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+    }
+});
+</script>
+{% endblock %} 

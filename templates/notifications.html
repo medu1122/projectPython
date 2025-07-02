@@ -1,0 +1,235 @@
+{% extends "layout.html" %}
+
+{% block title %}Thông báo - Hệ thống học PERL & PYTHON{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Thông báo</h2>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="markAllAsRead()">
+                        <i class="fas fa-check-double"></i> Đánh dấu tất cả đã đọc
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="clearAll()">
+                        <i class="fas fa-trash"></i> Xóa tất cả
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Notification Filters -->
+            <ul class="nav nav-pills mb-4">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" onclick="filterNotifications('all')">
+                        Tất cả <span class="badge bg-secondary">{{ total_count }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="filterNotifications('unread')">
+                        Chưa đọc <span class="badge bg-danger">{{ unread_count }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="filterNotifications('assignment')">
+                        Bài tập
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="filterNotifications('course')">
+                        Khóa học
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="filterNotifications('system')">
+                        Hệ thống
+                    </a>
+                </li>
+            </ul>
+            
+            <!-- Notifications List -->
+            <div class="list-group" id="notificationsList">
+                {% for notification in notifications %}
+                <div class="list-group-item list-group-item-action {{ 'bg-light' if not notification.is_read else '' }}" 
+                     data-notification-id="{{ notification.id }}"
+                     data-type="{{ notification.type }}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <div class="d-flex align-items-start">
+                            <div class="me-3">
+                                {% if notification.type == 'assignment' %}
+                                    <i class="fas fa-tasks fa-2x text-primary"></i>
+                                {% elif notification.type == 'course' %}
+                                    <i class="fas fa-book fa-2x text-success"></i>
+                                {% elif notification.type == 'grade' %}
+                                    <i class="fas fa-star fa-2x text-warning"></i>
+                                {% elif notification.type == 'deadline' %}
+                                    <i class="fas fa-clock fa-2x text-danger"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle fa-2x text-info"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <p class="mb-1">{{ notification.message }}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> {{ notification.created_at | timeago }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            {% if not notification.is_read %}
+                                <span class="badge bg-primary rounded-pill">Mới</span>
+                            {% endif %}
+                            <div class="mt-2">
+                                {% if notification.action_url %}
+                                <a href="{{ notification.action_url }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-arrow-right"></i> Xem
+                                </a>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteNotification({{ notification.id }})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-bell-slash fa-3x mb-3"></i>
+                    <p>Không có thông báo nào</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <nav aria-label="Notification pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="?page={{ current_page - 1 }}">Trước</a>
+                    </li>
+                    {% for page in range(1, total_pages + 1) %}
+                    <li class="page-item {% if page == current_page %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                    </li>
+                    {% endfor %}
+                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="?page={{ current_page + 1 }}">Sau</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Mark notification as read when clicked
+document.querySelectorAll('.list-group-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+        if (e.target.closest('button') || e.target.closest('a')) return;
+        
+        const notificationId = this.dataset.notificationId;
+        if (!this.classList.contains('bg-light')) return;
+        
+        fetch(`/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(response => {
+            if (response.ok) {
+                this.classList.remove('bg-light');
+                this.querySelector('.badge')?.remove();
+                updateUnreadCount();
+            }
+        });
+    });
+});
+
+function filterNotifications(type) {
+    const items = document.querySelectorAll('.list-group-item');
+    const links = document.querySelectorAll('.nav-link');
+    
+    // Update active link
+    links.forEach(link => link.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filter items
+    items.forEach(item => {
+        if (type === 'all') {
+            item.style.display = '';
+        } else if (type === 'unread') {
+            item.style.display = item.classList.contains('bg-light') ? '' : 'none';
+        } else {
+            item.style.display = item.dataset.type === type ? '' : 'none';
+        }
+    });
+}
+
+function markAllAsRead() {
+    if (!confirm('Đánh dấu tất cả thông báo là đã đọc?')) return;
+    
+    fetch('/notifications/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => {
+        if (response.ok) {
+            document.querySelectorAll('.bg-light').forEach(item => {
+                item.classList.remove('bg-light');
+                item.querySelector('.badge')?.remove();
+            });
+            updateUnreadCount();
+        }
+    });
+}
+
+function deleteNotification(id) {
+    if (!confirm('Xóa thông báo này?')) return;
+    
+    fetch(`/notifications/${id}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => {
+        if (response.ok) {
+            document.querySelector(`[data-notification-id="${id}"]`).remove();
+            updateNotificationCount();
+        }
+    });
+}
+
+function clearAll() {
+    if (!confirm('Xóa tất cả thông báo?')) return;
+    
+    fetch('/notifications/clear-all', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        }
+    });
+}
+
+function updateUnreadCount() {
+    // Update unread count in navigation
+    fetch('/notifications/unread-count')
+        .then(response => response.json())
+        .then(data => {
+            document.querySelector('.nav-link .badge.bg-danger').textContent = data.count;
+        });
+}
+
+function updateNotificationCount() {
+    const total = document.querySelectorAll('.list-group-item').length;
+    document.querySelector('.nav-link .badge.bg-secondary').textContent = total;
+}
+</script>
+{% endblock %} 

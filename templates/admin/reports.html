@@ -1,0 +1,288 @@
+{% extends "layout.html" %}
+
+{% block title %}Báo cáo & Thống kê - Hệ thống học PERL & PYTHON{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Báo cáo & Thống kê hệ thống</h2>
+            
+            <!-- Date Range Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('admin.reports') }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label">Từ ngày</label>
+                                <input type="date" class="form-control" name="from_date" 
+                                       value="{{ from_date }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Đến ngày</label>
+                                <input type="date" class="form-control" name="to_date" 
+                                       value="{{ to_date }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Khóa học</label>
+                                <select class="form-select" name="course_id">
+                                    <option value="">Tất cả khóa học</option>
+                                    {% for course in courses %}
+                                        <option value="{{ course.id }}">{{ course.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Lọc
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="exportReport()">
+                                    <i class="fas fa-download"></i> Xuất báo cáo
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center bg-primary text-white">
+                        <div class="card-body">
+                            <h3>{{ stats.total_users }}</h3>
+                            <p class="mb-0">Tổng người dùng</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body">
+                            <h3>{{ stats.total_courses }}</h3>
+                            <p class="mb-0">Khóa học</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body">
+                            <h3>{{ stats.total_assignments }}</h3>
+                            <p class="mb-0">Bài tập</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body">
+                            <h3>{{ stats.total_submissions }}</h3>
+                            <p class="mb-0">Bài nộp</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Biểu đồ đăng ký theo tháng</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="registrationChart" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tỷ lệ hoàn thành bài tập</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="completionChart" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Tables -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Top 10 sinh viên xuất sắc</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Họ tên</th>
+                                            <th>Điểm TB</th>
+                                            <th>Bài nộp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in top_students %}
+                                        <tr>
+                                            <td>{{ loop.index }}</td>
+                                            <td>{{ student.fullname }}</td>
+                                            <td>{{ "%.1f"|format(student.avg_score) }}</td>
+                                            <td>{{ student.submission_count }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Thống kê theo khóa học</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Khóa học</th>
+                                            <th>SV đăng ký</th>
+                                            <th>Bài tập</th>
+                                            <th>Tỷ lệ HT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for course_stat in course_stats %}
+                                        <tr>
+                                            <td>{{ course_stat.name }}</td>
+                                            <td>{{ course_stat.student_count }}</td>
+                                            <td>{{ course_stat.assignment_count }}</td>
+                                            <td>{{ "%.0f"|format(course_stat.completion_rate) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Log -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Hoạt động gần đây</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Người dùng</th>
+                                    <th>Hoạt động</th>
+                                    <th>Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activities %}
+                                <tr>
+                                    <td>{{ activity.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ activity.user.fullname }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ activity.type_color }}">
+                                            {{ activity.type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ activity.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xuất báo cáo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Chọn định dạng xuất báo cáo:</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="exportAs('pdf')">
+                        <i class="fas fa-file-pdf"></i> Xuất PDF
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportAs('excel')">
+                        <i class="fas fa-file-excel"></i> Xuất Excel
+                    </button>
+                    <button class="btn btn-outline-info" onclick="exportAs('csv')">
+                        <i class="fas fa-file-csv"></i> Xuất CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Registration Chart
+const registrationCtx = document.getElementById('registrationChart').getContext('2d');
+new Chart(registrationCtx, {
+    type: 'line',
+    data: {
+        labels: {{ registration_labels | tojson }},
+        datasets: [{
+            label: 'Số lượng đăng ký',
+            data: {{ registration_data | tojson }},
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Completion Chart
+const completionCtx = document.getElementById('completionChart').getContext('2d');
+new Chart(completionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Hoàn thành', 'Chưa hoàn thành'],
+        datasets: [{
+            data: [{{ stats.completed_percentage }}, {{ 100 - stats.completed_percentage }}],
+            backgroundColor: ['#28a745', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+function exportReport() {
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+}
+
+function exportAs(format) {
+    const params = new URLSearchParams(window.location.search);
+    params.append('format', format);
+    window.location.href = `/admin/export-report?${params.toString()}`;
+}
+</script>
+{% endblock %} 

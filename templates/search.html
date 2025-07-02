@@ -1,0 +1,236 @@
+{% extends "layout.html" %}
+
+{% block title %}Tìm kiếm - Hệ thống học PERL & PYTHON{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Tìm kiếm</h2>
+            
+            <!-- Search Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('search') }}">
+                        <div class="input-group input-group-lg">
+                            <input type="text" class="form-control" name="q" 
+                                   placeholder="Tìm kiếm khóa học, bài giảng, bài tập, người dùng..." 
+                                   value="{{ query }}" autofocus>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i> Tìm kiếm
+                            </button>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="type" 
+                                           value="course" id="typeCourse" 
+                                           {% if 'course' in search_types %}checked{% endif %}>
+                                    <label class="form-check-label" for="typeCourse">
+                                        Khóa học
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="type" 
+                                           value="lesson" id="typeLesson"
+                                           {% if 'lesson' in search_types %}checked{% endif %}>
+                                    <label class="form-check-label" for="typeLesson">
+                                        Bài giảng
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="type" 
+                                           value="assignment" id="typeAssignment"
+                                           {% if 'assignment' in search_types %}checked{% endif %}>
+                                    <label class="form-check-label" for="typeAssignment">
+                                        Bài tập
+                                    </label>
+                                </div>
+                                {% if current_user.role in ['admin', 'teacher'] %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="type" 
+                                           value="user" id="typeUser"
+                                           {% if 'user' in search_types %}checked{% endif %}>
+                                    <label class="form-check-label" for="typeUser">
+                                        Người dùng
+                                    </label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if query %}
+            <!-- Search Results -->
+            <div class="mb-3">
+                <p class="text-muted">
+                    Tìm thấy <strong>{{ total_results }}</strong> kết quả cho "<strong>{{ query }}</strong>"
+                </p>
+            </div>
+            
+            <!-- Results Tabs -->
+            <ul class="nav nav-tabs mb-4" role="tablist">
+                {% if course_results %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#courses" type="button">
+                        <i class="fas fa-book"></i> Khóa học ({{ course_results|length }})
+                    </button>
+                </li>
+                {% endif %}
+                
+                {% if lesson_results %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if not course_results %}active{% endif %}" 
+                            data-bs-toggle="tab" data-bs-target="#lessons" type="button">
+                        <i class="fas fa-file-alt"></i> Bài giảng ({{ lesson_results|length }})
+                    </button>
+                </li>
+                {% endif %}
+                
+                {% if assignment_results %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if not course_results and not lesson_results %}active{% endif %}" 
+                            data-bs-toggle="tab" data-bs-target="#assignments" type="button">
+                        <i class="fas fa-tasks"></i> Bài tập ({{ assignment_results|length }})
+                    </button>
+                </li>
+                {% endif %}
+                
+                {% if user_results %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if not course_results and not lesson_results and not assignment_results %}active{% endif %}" 
+                            data-bs-toggle="tab" data-bs-target="#users" type="button">
+                        <i class="fas fa-users"></i> Người dùng ({{ user_results|length }})
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <div class="tab-content">
+                <!-- Course Results -->
+                {% if course_results %}
+                <div class="tab-pane fade show active" id="courses">
+                    <div class="row">
+                        {% for course in course_results %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a href="{{ url_for('courses.detail', id=course.id) }}">
+                                            {{ course.name }}
+                                        </a>
+                                    </h5>
+                                    <p class="card-text">{{ course.description | truncate(150) }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user"></i> {{ course.teacher.fullname }}
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-users"></i> {{ course.students|length }} sinh viên
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Lesson Results -->
+                {% if lesson_results %}
+                <div class="tab-pane fade {% if not course_results %}show active{% endif %}" id="lessons">
+                    <div class="list-group">
+                        {% for lesson in lesson_results %}
+                        <a href="{{ url_for('lessons.view', id=lesson.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ lesson.title }}</h6>
+                                <small>{{ lesson.course.name }}</small>
+                            </div>
+                            <p class="mb-1">{{ lesson.content | striptags | truncate(200) }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ lesson.created_at.strftime('%d/%m/%Y') }}
+                            </small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Assignment Results -->
+                {% if assignment_results %}
+                <div class="tab-pane fade {% if not course_results and not lesson_results %}show active{% endif %}" id="assignments">
+                    <div class="row">
+                        {% for assignment in assignment_results %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a href="{{ url_for('student.view_assignment' if current_user.role == 'student' else 'teacher.assignment_detail', id=assignment.id) }}">
+                                            {{ assignment.title }}
+                                        </a>
+                                    </h6>
+                                    <p class="card-text small">{{ assignment.description | truncate(100) }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-{{ 'primary' if assignment.type == 'code' else 'info' if assignment.type == 'quiz' else 'secondary' }}">
+                                            {{ assignment.type | title }}
+                                        </span>
+                                        <small class="text-muted">
+                                            Hạn: {{ assignment.due_date.strftime('%d/%m/%Y') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- User Results -->
+                {% if user_results %}
+                <div class="tab-pane fade {% if not course_results and not lesson_results and not assignment_results %}show active{% endif %}" id="users">
+                    <div class="row">
+                        {% for user in user_results %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <img src="{{ user.avatar_url or '/static/uploads/profile_images/default.png' }}" 
+                                         class="rounded-circle mb-2" width="60" height="60" alt="Avatar">
+                                    <h6 class="card-title mb-1">{{ user.fullname }}</h6>
+                                    <p class="card-text small text-muted">
+                                        {{ user.email }}<br>
+                                        <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'warning' if user.role == 'teacher' else 'primary' }}">
+                                            {{ user.role | title }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if total_results == 0 %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle"></i> Không tìm thấy kết quả nào phù hợp.
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <!-- No search yet -->
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <p>Nhập từ khóa để bắt đầu tìm kiếm</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

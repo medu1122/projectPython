@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+
+{% block title %}Kết quả và phản hồi - {{ submission.assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('student.assignments') }}">Bài tập</a></li>
+            <li class="breadcrumb-item active">Kết quả: {{ submission.assignment.title }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ submission.assignment.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>Khóa học:</strong> {{ submission.assignment.course.name }}</p>
+                    <p><strong>Thời gian nộp:</strong> {{ submission.submitted_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    
+                    {% if submission.is_late %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Nộp trễ deadline
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Score Display -->
+                    <div class="text-center my-4">
+                        <h2 class="display-4 {{ 'text-success' if submission.score >= submission.assignment.max_score * 0.8 else 'text-warning' if submission.score >= submission.assignment.max_score * 0.5 else 'text-danger' }}">
+                            {{ submission.score }}/{{ submission.assignment.max_score }}
+                        </h2>
+                        <p class="text-muted">Điểm số</p>
+                        
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar {{ 'bg-success' if submission.score >= submission.assignment.max_score * 0.8 else 'bg-warning' if submission.score >= submission.assignment.max_score * 0.5 else 'bg-danger' }}" 
+                                 role="progressbar" 
+                                 style="width: {{ (submission.score / submission.assignment.max_score * 100) }}%">
+                                {{ (submission.score / submission.assignment.max_score * 100) | round }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Teacher Feedback -->
+                    {% if submission.feedback %}
+                    <div class="card bg-light mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-comment"></i> Phản hồi từ giảng viên</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ submission.feedback | safe }}</p>
+                            <small class="text-muted">
+                                Chấm bởi: {{ submission.graded_by.fullname }} - 
+                                {{ submission.graded_at.strftime('%d/%m/%Y %H:%M') }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Submission Content -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Nội dung bài nộp</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if submission.assignment.type == 'code' %}
+                                <pre class="bg-dark text-white p-3 rounded"><code>{{ submission.content }}</code></pre>
+                                
+                                {% if submission.test_results %}
+                                <h6 class="mt-3">Kết quả test:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Test case</th>
+                                                <th>Input</th>
+                                                <th>Expected</th>
+                                                <th>Output</th>
+                                                <th>Result</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for test in submission.test_results %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td><code>{{ test.input }}</code></td>
+                                                <td><code>{{ test.expected }}</code></td>
+                                                <td><code>{{ test.output }}</code></td>
+                                                <td>
+                                                    {% if test.passed %}
+                                                        <span class="badge bg-success">Pass</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Fail</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                                
+                            {% elif submission.assignment.type == 'quiz' %}
+                                <h6>Câu trả lời của bạn:</h6>
+                                {% for answer in submission.quiz_answers %}
+                                <div class="mb-3">
+                                    <p><strong>Câu {{ loop.index }}:</strong> {{ answer.question.text }}</p>
+                                    <p>Câu trả lời: {{ answer.answer_text }}</p>
+                                    {% if answer.is_correct is not none %}
+                                        {% if answer.is_correct %}
+                                            <span class="badge bg-success">Đúng</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Sai</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                
+                            {% else %}
+                                <p><strong>File đã nộp:</strong> {{ submission.filename }}</p>
+                                <a href="{{ url_for('student.download_submission', id=submission.id) }}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-download"></i> Tải xuống
+                                </a>
+                            {% endif %}
+                            
+                            {% if submission.notes %}
+                            <div class="mt-3">
+                                <h6>Ghi chú của bạn:</h6>
+                                <p class="text-muted">{{ submission.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Thao tác</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('student.assignments') }}" class="btn btn-secondary w-100 mb-2">
+                        <i class="fas fa-arrow-left"></i> Quay lại danh sách
+                    </a>
+                    
+                    {% if submission.assignment.allow_resubmit and not submission.assignment.is_overdue %}
+                    <a href="{{ url_for('student.view_assignment', id=submission.assignment.id) }}" 
+                       class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-redo"></i> Nộp lại
+                    </a>
+                    {% endif %}
+                    
+                    <button class="btn btn-info w-100" onclick="window.print()">
+                        <i class="fas fa-print"></i> In kết quả
+                    </button>
+                </div>
+            </div>
+            
+            <!-- AI Suggestions -->
+            {% if submission.ai_suggestions %}
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-robot"></i> Gợi ý từ AI</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ submission.ai_suggestions | safe }}</p>
+                    <small class="text-muted">
+                        * Đây là gợi ý tự động, hãy tham khảo thêm ý kiến giảng viên
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .navbar, .breadcrumb, .btn, .card-header {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %} 
