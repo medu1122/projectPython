@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>{{ assignment.title }}</h2>
+  <p>{{ assignment.description }}</p>
+  <ul class="list-group mb-3">
+    <li class="list-group-item"><b>Loại:</b> {{ assignment.type }}</li>
+    <li class="list-group-item"><b>Hạn nộp:</b> {{ assignment.due_date.strftime('%Y-%m-%d') if assignment.due_date else 'Không có' }}</li>
+    <li class="list-group-item"><b>Điểm tối đa:</b> {{ assignment.max_score }}</li>
+  </ul>
+  {% if submission %}
+    <div class="alert alert-success">Đã nộp bài lúc {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</div>
+    <div class="mb-3"><b>Bài làm:</b><br>{{ submission.content }}</div>
+    {% if submission.score is not none %}
+      <div class="alert alert-info">Điểm: {{ submission.score }}</div>
+    {% else %}
+      <div class="alert alert-warning">Chưa được chấm điểm</div>
+    {% endif %}
+  {% else %}
+    <a href="{{ url_for('assignments.submit_assignment', assignment_id=assignment.id) }}" class="btn btn-primary">Nộp bài</a>
+  {% endif %}
+</div>
+{% endblock %} 

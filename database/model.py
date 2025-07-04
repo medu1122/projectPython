@@ -210,3 +210,78 @@ class UserProgress(db.Model):
     
     def __repr__(self):
         return f'<UserProgress User:{self.user_id} Lesson:{self.lesson_id} ({self.completion_percentage}%)>'
+
+class Assignment(db.Model):
+    __tablename__ = 'assignments'
+    id = db.Column(db.Integer, primary_key=True)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    type = db.Column(db.String(50), nullable=False)  # code, quiz, essay
+    due_date = db.Column(db.DateTime, nullable=True)
+    max_score = db.Column(db.Float, default=100.0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    submissions = db.relationship('AssignmentSubmission', backref='assignment', lazy=True)
+    def __repr__(self):
+        return f'<Assignment {self.title}>'
+
+class AssignmentSubmission(db.Model):
+    __tablename__ = 'assignment_submissions'
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.Integer, db.ForeignKey('assignments.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    content = db.Column(db.Text, nullable=True)
+    score = db.Column(db.Float, nullable=True)
+    submitted_at = db.Column(db.DateTime, default=datetime.now)
+    user = db.relationship('User', backref='assignment_submissions', lazy=True)
+    def __repr__(self):
+        return f'<Submission Assignment:{self.assignment_id} User:{self.user_id}>'
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    user = db.relationship('User', backref='comments', lazy=True)
+    lesson = db.relationship('Lesson', backref='comments', lazy=True)
+    def __repr__(self):
+        return f'<Comment User:{self.user_id} Lesson:{self.lesson_id}>'
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    user = db.relationship('User', backref='notifications', lazy=True)
+    def __repr__(self):
+        return f'<Notification User:{self.user_id} Read:{self.is_read}>'
+
+class Certificate(db.Model):
+    __tablename__ = 'certificates'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
+    certificate_code = db.Column(db.String(100), nullable=False, unique=True)
+    issued_at = db.Column(db.DateTime, default=datetime.now)
+    user = db.relationship('User', backref='certificates', lazy=True)
+    course = db.relationship('Course', backref='certificates', lazy=True)
+    def __repr__(self):
+        return f'<Certificate User:{self.user_id} Course:{self.course_id}>'
+
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='pending')  # pending, paid, failed
+    paid_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    user = db.relationship('User', backref='payments', lazy=True)
+    course = db.relationship('Course', backref='payments', lazy=True)
+    def __repr__(self):
+        return f'<Payment User:{self.user_id} Course:{self.course_id} Status:{self.status}>'

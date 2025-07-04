@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Tạo Assignment mới cho bài học: {{ lesson.title }}</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="title" class="form-label">Tên Assignment</label>
+      <input type="text" class="form-control" id="title" name="title" required>
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Mô tả</label>
+      <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="type" class="form-label">Loại bài</label>
+      <select class="form-select" id="type" name="type">
+        <option value="essay">Tự luận</option>
+        <option value="code">Code</option>
+        <option value="quiz">Quiz</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="due_date" class="form-label">Hạn nộp</label>
+      <input type="date" class="form-control" id="due_date" name="due_date">
+    </div>
+    <div class="mb-3">
+      <label for="max_score" class="form-label">Điểm tối đa</label>
+      <input type="number" class="form-control" id="max_score" name="max_score" value="100" min="1" max="100">
+    </div>
+    <button type="submit" class="btn btn-primary">Tạo Assignment</button>
+    <a href="{{ url_for('lessons.view_lesson', lesson_id=lesson.id) }}" class="btn btn-secondary ms-2">Quay lại</a>
+  </form>
+</div>
+{% endblock %} 

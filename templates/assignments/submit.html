@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Nộp bài Assignment: {{ assignment.title }}</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="content" class="form-label">Bài làm</label>
+      <textarea class="form-control" id="content" name="content" rows="8" required>{{ submission.content if submission else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-success">Nộp bài</button>
+    <a href="{{ url_for('assignments.view_assignment', assignment_id=assignment.id) }}" class="btn btn-secondary ms-2">Quay lại</a>
+  </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,19 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Chấm điểm Assignment: {{ assignment.title }}</h2>
+  <div class="mb-3">
+    <b>Học viên:</b> {{ submission.user.name }}<br>
+    <b>Bài làm:</b>
+    <div class="border p-3 bg-light">{{ submission.content }}</div>
+  </div>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="score" class="form-label">Điểm</label>
+      <input type="number" class="form-control" id="score" name="score" value="{{ submission.score if submission.score is not none else '' }}" min="0" max="{{ assignment.max_score }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Lưu điểm</button>
+    <a href="{{ url_for('assignments.view_assignment', assignment_id=assignment.id) }}" class="btn btn-secondary ms-2">Quay lại</a>
+  </form>
+</div>
+{% endblock %} 

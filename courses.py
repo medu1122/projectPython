@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort, jsonify
 from flask_login import login_required, current_user
 from database.config import db
-from database.model import Course, Category, UserCourse, User
+from database.model import Course, Category, UserCourse, User, Module
 
 courses = Blueprint('courses', __name__, url_prefix='/courses')
 
@@ -142,4 +142,127 @@ def course_students(course_id):
         'courses/students.html',
         course=course,
         enrollments=enrollments
-    ) 
+    )
+
+@courses.route('/courses', methods=['GET'])
+def get_courses():
+    courses = Course.query.all()
+    return jsonify([{'id': c.id, 'title': c.title, 'description': c.description} for c in courses])
+
+@courses.route('/courses/<int:course_id>', methods=['GET'])
+def get_course_detail(course_id):
+    course = Course.query.get_or_404(course_id)
+    return jsonify({'id': course.id, 'title': course.title, 'description': course.description})
+
+@courses.route('/courses', methods=['POST'])
+def create_course():
+    data = request.json
+    course = Course(title=data['title'], description=data.get('description'))
+    db.session.add(course)
+    db.session.commit()
+    return jsonify({'id': course.id, 'title': course.title}), 201
+
+@courses.route('/courses/<int:course_id>', methods=['PUT'])
+def update_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    data = request.json
+    course.title = data.get('title', course.title)
+    course.description = data.get('description', course.description)
+    db.session.commit()
+    return jsonify({'id': course.id, 'title': course.title})
+
+@courses.route('/courses/<int:course_id>', methods=['DELETE'])
+def delete_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    db.session.delete(course)
+    db.session.commit()
+    return '', 204
+
+@courses.route('/courses/<int:course_id>/enroll', methods=['POST'])
+def enroll_course(course_id):
+    user_id = request.json.get('user_id')
+    uc = UserCourse(user_id=user_id, course_id=course_id)
+    db.session.add(uc)
+    db.session.commit()
+    return jsonify({'message': 'Enrolled successfully'})
+
+@courses.route('/courses/<int:course_id>/modules', methods=['GET'])
+def get_course_modules(course_id):
+    modules = Module.query.filter_by(course_id=course_id).all()
+    return jsonify([{'id': m.id, 'title': m.title} for m in modules])
+
+@courses.route('/create', methods=['GET', 'POST'])
+@login_required
+def create_course_form():
+    """Form tạo course cho teacher/admin"""
+    if current_user.role not in ['teacher', 'admin']:
+        abort(403)
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        category_id = request.form.get('category_id', type=int)
+        level = request.form.get('level')
+        
+        if not title or not category_id or not level:
+            flash('Vui lòng nhập đầy đủ thông tin.', 'warning')
+            return redirect(url_for('courses.create_course_form'))
+        
+        course = Course(
+            title=title,
+            description=description,
+            category_id=category_id,
+            level=level,
+            teacher_id=current_user.id,
+            is_active=True
+        )
+        try:
+            db.session.add(course)
+            db.session.commit()
+            flash('Tạo khóa học thành công!', 'success')
+            return redirect(url_for('courses.manage'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Có lỗi khi tạo khóa học.', 'danger')
+            return redirect(url_for('courses.create_course_form'))
+    
+    categories = Category.query.all()
+    levels = ['beginner', 'intermediate', 'advanced']
+    return render_template('courses/create.html', categories=categories, levels=levels)
+
+@courses.route('/<int:course_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    # Chỉ teacher là chủ course hoặc admin mới được sửa
+    if current_user.role == 'teacher' and course.teacher_id != current_user.id:
+        abort(403)
+    if current_user.role not in ['teacher', 'admin']:
+        abort(403)
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        category_id = request.form.get('category_id', type=int)
+        level = request.form.get('level')
+        
+        if not title or not category_id or not level:
+            flash('Vui lòng nhập đầy đủ thông tin.', 'warning')
+            return redirect(url_for('courses.edit_course', course_id=course_id))
+        
+        course.title = title
+        course.description = description
+        course.category_id = category_id
+        course.level = level
+        try:
+            db.session.commit()
+            flash('Cập nhật khóa học thành công!', 'success')
+            return redirect(url_for('courses.manage'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Có lỗi khi cập nhật khóa học.', 'danger')
+            return redirect(url_for('courses.edit_course', course_id=course_id))
+    
+    categories = Category.query.all()
+    levels = ['beginner', 'intermediate', 'advanced']
+    return render_template('courses/edit.html', course=course, categories=categories, levels=levels) 
