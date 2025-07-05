@@ -5,7 +5,7 @@ from database.config import db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lms.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://thinh:1@MEDU\\SQLEXPRESS/PythonProject?driver=ODBC+Driver+17+for+SQL+Server'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
