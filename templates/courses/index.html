@@ -7,10 +7,21 @@
     <div class="row">
         <div class="col">
             <div class="page-header">
-                <h1 class="page-title">
-                    <i class="fas fa-book mr-2"></i>All Courses
-                </h1>
-                <p class="page-subtitle">Discover and enroll in courses to enhance your skills</p>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h1 class="page-title">
+                            <i class="fas fa-book mr-2"></i>All Courses
+                        </h1>
+                        <p class="page-subtitle">Discover and enroll in courses to enhance your skills</p>
+                    </div>
+                    {% if current_user.is_authenticated and current_user.role in ['teacher', 'admin'] %}
+                        <div class="page-actions">
+                            <a href="{{ url_for('courses.create_course_form') }}" class="btn btn-success">
+                                <i class="fas fa-plus mr-1"></i>Create Course
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Filters -->

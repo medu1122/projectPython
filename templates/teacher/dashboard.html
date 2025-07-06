@@ -9,7 +9,12 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="card-title">Teacher Dashboard</h2>
-                    <a href="/" class="btn btn-sm btn-outline-primary">Back to Home</a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('courses.my_courses') }}" class="btn btn-success">
+                            <i class="fas fa-book"></i> My Courses
+                        </a>
+                        <a href="/" class="btn btn-sm btn-outline-primary">Back to Home</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,10 +22,57 @@
                             <h3>Welcome, Teacher!</h3>
                             <p>Manage your courses and student progress</p>
                         </div>
-                        <div>
-                            <button class="btn btn-primary">
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('courses.create_course_form') }}" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Create New Course
-                            </button>
+                            </a>
+                            <a href="{{ url_for('courses.my_courses') }}" class="btn btn-outline-success">
+                                <i class="fas fa-book"></i> View My Courses
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Navigation Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center quick-nav-card">
+                                <div class="card-body">
+                                    <i class="fas fa-book fa-2x text-primary mb-2"></i>
+                                    <h5>My Courses</h5>
+                                    <p class="text-muted">Manage your teaching courses</p>
+                                    <a href="{{ url_for('courses.my_courses') }}" class="btn btn-primary btn-sm">View Courses</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center quick-nav-card">
+                                <div class="card-body">
+                                    <i class="fas fa-plus fa-2x text-success mb-2"></i>
+                                    <h5>Create Course</h5>
+                                    <p class="text-muted">Start a new course</p>
+                                    <a href="{{ url_for('courses.create_course_form') }}" class="btn btn-success btn-sm">Create Course</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center quick-nav-card">
+                                <div class="card-body">
+                                    <i class="fas fa-users fa-2x text-info mb-2"></i>
+                                    <h5>Students</h5>
+                                    <p class="text-muted">View your students</p>
+                                    <a href="#" class="btn btn-info btn-sm">View Students</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center quick-nav-card">
+                                <div class="card-body">
+                                    <i class="fas fa-tasks fa-2x text-warning mb-2"></i>
+                                    <h5>Assignments</h5>
+                                    <p class="text-muted">Manage assignments</p>
+                                    <a href="#" class="btn btn-warning btn-sm">View Assignments</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -61,7 +113,12 @@
                     </div>
                     
                     <!-- Your Courses -->
-                    <h3>Your Courses</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Your Courses</h3>
+                        <a href="{{ url_for('courses.my_courses') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-right"></i> View All Courses
+                        </a>
+                    </div>
                     <div class="row">
                         <div class="col-md-4 mb-4">
                             <div class="card course-card">
@@ -75,7 +132,10 @@
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <button class="btn btn-sm btn-primary">Manage Course</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{{ url_for('courses.detail', course_id=1) }}" class="btn btn-sm btn-primary">View Course</a>
+                                        <a href="{{ url_for('courses.my_courses') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -91,7 +151,10 @@
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <button class="btn btn-sm btn-primary">Manage Course</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{{ url_for('courses.detail', course_id=2) }}" class="btn btn-sm btn-primary">View Course</a>
+                                        <a href="{{ url_for('courses.my_courses') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -107,7 +170,10 @@
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <button class="btn btn-sm btn-primary">Manage Course</button>
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{{ url_for('courses.detail', course_id=3) }}" class="btn btn-sm btn-primary">View Course</a>
+                                        <a href="{{ url_for('courses.my_courses') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -189,4 +255,68 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.quick-nav-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.quick-nav-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.course-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.course-card-img {
+    height: 150px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+}
+
+.course-card-body {
+    padding: 1.5rem;
+}
+
+.course-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.course-card-text {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.course-card-footer {
+    padding: 1rem 1.5rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #eee;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+</style>
 {% endblock %} 

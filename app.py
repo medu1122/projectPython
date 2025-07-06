@@ -1,7 +1,9 @@
-from flask import Flask, render_template, redirect, url_for
-from flask_login import LoginManager, current_user
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
+from flask_login import LoginManager, current_user, login_required
 from flask_migrate import Migrate
 from database.config import db
+from datetime import datetime
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -16,7 +18,7 @@ from auth import auth
 from courses import courses
 from lessons import lessons
 from database.heath import heath, init_db
-from database.model import User
+from database.model import User, Assignment, Course, Lesson
 from assignments import assignments
 from users import users
 from notifications import notifications
@@ -114,6 +116,96 @@ def student_feedback():
 @app.route('/admin/reports')
 def admin_reports():
     return render_template('admin/reports.html')
+
+@app.route('/teacher/assignments/create', methods=['GET'])
+@login_required
+def teacher_create_assignment_form():
+    if not hasattr(current_user, 'role') or current_user.role != 'teacher':
+        flash('Permission denied!', 'danger')
+        return redirect(url_for('teacher_assignments'))
+    # Lấy danh sách courses mà giáo viên này dạy
+    courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    return render_template('teacher/assignment_create.html', courses=courses)
+
+@app.route('/teacher/assignments/create', methods=['POST'])
+@login_required
+def teacher_create_assignment():
+    if not hasattr(current_user, 'role') or current_user.role != 'teacher':
+        flash('Permission denied!', 'danger')
+        return redirect(url_for('teacher_assignments'))
+
+    title = request.form.get('title')
+    description = request.form.get('description')
+    type_ = request.form.get('type')
+    due_date = request.form.get('due_date')
+    max_score = request.form.get('max_score', type=float)
+    course_id = request.form.get('course_id', type=int)
+
+    # Lấy lesson đầu tiên của course
+    course = Course.query.get(course_id)
+    lesson = None
+    if course and course.modules:
+        for module in course.modules:
+            if module.lessons:
+                lesson = module.lessons[0]
+                break
+    if not lesson:
+        flash('Course must have at least one lesson to create assignment!', 'danger')
+        return redirect(url_for('teacher_assignments'))
+
+    assignment = Assignment(
+        lesson_id=lesson.id,
+        title=title,
+        description=description,
+        type=type_,
+        due_date=due_date,
+        max_score=max_score or 100.0,
+        created_at=datetime.now()
+    )
+    db.session.add(assignment)
+    db.session.commit()
+    flash('Assignment created successfully!', 'success')
+    return redirect(url_for('teacher_assignments'))
+
+@app.route('/api/run-code', methods=['POST'])
+def api_run_code():
+    data = request.get_json()
+    code = data.get('code')
+    language = data.get('language')
+    if not code or not language:
+        return jsonify({'success': False, 'error': 'Thiếu code hoặc ngôn ngữ'}), 400
+
+    # Map ngôn ngữ sang Judge0 language_id
+    lang_map = {
+        'python': 71,  # Python 3.x
+        'perl': 85     # Perl 5
+    }
+    language_id = lang_map.get(language.lower())
+    if not language_id:
+        return jsonify({'success': False, 'error': 'Ngôn ngữ không hỗ trợ'}), 400
+
+    # Gửi code tới Judge0 API
+    try:
+        resp = requests.post(
+            'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true',
+            headers={
+                'Content-Type': 'application/json',
+                'X-RapidAPI-Key': 'YOUR_RAPIDAPI_KEY',  # <-- Thay bằng key thật
+                'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+            },
+            json={
+                'source_code': code,
+                'language_id': language_id
+            },
+            timeout=15
+        )
+        if resp.status_code != 201:
+            return jsonify({'success': False, 'error': 'Không thể kết nối Judge0'}), 500
+        result = resp.json()
+        output = result.get('stdout') or result.get('compile_output') or result.get('stderr') or ''
+        return jsonify({'success': True, 'output': output})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 
