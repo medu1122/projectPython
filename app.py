@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from database.config import db
 from datetime import datetime
 import requests
+import base64
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -175,7 +176,6 @@ def api_run_code():
     if not code or not language:
         return jsonify({'success': False, 'error': 'Thiếu code hoặc ngôn ngữ'}), 400
 
-    # Map ngôn ngữ sang Judge0 language_id
     lang_map = {
         'python': 71,  # Python 3.x
         'perl': 85     # Perl 5
@@ -184,26 +184,60 @@ def api_run_code():
     if not language_id:
         return jsonify({'success': False, 'error': 'Ngôn ngữ không hỗ trợ'}), 400
 
-    # Gửi code tới Judge0 API
+    def b64encode(s):
+        return base64.b64encode(s.encode('utf-8')).decode('utf-8') if s else ''
+    def b64decode(s):
+        return base64.b64decode(s).decode('utf-8') if s else ''
+
     try:
         resp = requests.post(
-            'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true',
+            'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=true&wait=true',
             headers={
                 'Content-Type': 'application/json',
-                'X-RapidAPI-Key': 'YOUR_RAPIDAPI_KEY',  # <-- Thay bằng key thật
+                'X-RapidAPI-Key': 'a90d1bc759msh073241cd26ac790p1f3f29jsn130f109ff3d0',
                 'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
             },
             json={
-                'source_code': code,
+                'source_code': b64encode(code),
                 'language_id': language_id
             },
             timeout=15
         )
-        if resp.status_code != 201:
-            return jsonify({'success': False, 'error': 'Không thể kết nối Judge0'}), 500
-        result = resp.json()
-        output = result.get('stdout') or result.get('compile_output') or result.get('stderr') or ''
-        return jsonify({'success': True, 'output': output})
+        def parse_judge0_result(result):
+            if result.get('stdout'):
+                return {'success': True, 'output': b64decode(result['stdout'])}
+            elif result.get('stderr'):
+                return {'success': False, 'error': b64decode(result['stderr'])}
+            elif result.get('compile_output'):
+                return {'success': False, 'error': b64decode(result['compile_output'])}
+            else:
+                return {'success': False, 'error': 'Không có output từ Judge0'}
+        if resp.status_code == 201:
+            result = resp.json()
+            return jsonify(parse_judge0_result(result))
+        elif resp.status_code == 202:
+            result = resp.json()
+            token = result.get('token')
+            if not token:
+                return jsonify({'success': False, 'error': 'Không nhận được token từ Judge0'}), 500
+            get_resp = requests.get(
+                f'https://judge0-ce.p.rapidapi.com/submissions/{token}?base64_encoded=true',
+                headers={
+                    'X-RapidAPI-Key': 'a90d1bc759msh073241cd26ac790p1f3f29jsn130f109ff3d0',
+                    'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+                },
+                timeout=15
+            )
+            if get_resp.status_code == 200:
+                get_result = get_resp.json()
+                return jsonify(parse_judge0_result(get_result))
+            else:
+                return jsonify({'success': False, 'error': f'GET Judge0 lỗi: {get_resp.status_code} {get_resp.text}'}), 500
+        elif resp.status_code == 200:
+            result = resp.json()
+            return jsonify(parse_judge0_result(result))
+        else:
+            return jsonify({'success': False, 'error': f'Judge0 trả về status {resp.status_code}: {resp.text}'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

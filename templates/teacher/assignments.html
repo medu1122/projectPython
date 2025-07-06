@@ -145,27 +145,29 @@
                                 </div>
                                 
                                 <!-- Progress Bar -->
+                                {% set submission_rate = ((assignment.submissions|length if assignment.submissions else 0) / (assignment.course.students|length if assignment.course and assignment.course.students else 1) * 100)|round(1) if assignment.course and assignment.course.students else 0 %}
                                 <div class="submission-progress">
                                     <div class="progress-info">
                                         <span>Submission Rate</span>
-                                        <span>{{ ((assignment.submissions|length if assignment.submissions else 0) / (assignment.course.students|length if assignment.course and assignment.course.students else 1) * 100)|round(1) }}%</span>
+                                        <span>{{ submission_rate }}%</span>
                                     </div>
                                     <div class="progress">
-                                        <div class="progress-bar" style="width: {{ ((assignment.submissions|length if assignment.submissions else 0) / (assignment.course.students|length if assignment.course and assignment.course.students else 1) * 100)|round(1) }}%"></div>
+                                        <div class="progress-bar progress-bar-rate-{{ assignment.id }}" style="width: {{ submission_rate }}%;"></div>
                                     </div>
                                 </div>
                                 
                                 <!-- Grading Status -->
                                 {% if assignment.submissions %}
+                                {% set graded_count = assignment.submissions|selectattr('score', 'defined')|list|length %}
+                                {% set total_submissions = assignment.submissions|length %}
+                                {% set grade = (graded_count / total_submissions * 100)|round(1) if total_submissions else 0 %}
                                 <div class="grading-status">
-                                    {% set graded_count = assignment.submissions|selectattr('score', 'defined')|list|length %}
-                                    {% set total_submissions = assignment.submissions|length %}
                                     <div class="grading-info">
                                         <span>Grading Progress</span>
                                         <span>{{ graded_count }}/{{ total_submissions }}</span>
                                     </div>
                                     <div class="progress">
-                                        <div class="progress-bar bg-success" style="width: {{ (graded_count / total_submissions * 100)|round(1) }}%"></div>
+                                        <div class="progress-bar bg-success progress-bar-grade-{{ assignment.id }}"></div>
                                     </div>
                                 </div>
                                 {% endif %}
@@ -182,11 +184,11 @@
                                         <i class="fas fa-check"></i>
                                     </a>
                                     <button class="btn btn-outline-warning" 
-                                            onclick="editAssignment({{ assignment.id }})" title="Edit Assignment">
+                                            onclick="editAssignment('{{ assignment.id }}')" title="Edit Assignment">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button class="btn btn-outline-danger" 
-                                            onclick="deleteAssignment({{ assignment.id }})" title="Delete Assignment">
+                                            onclick="deleteAssignment('{{ assignment.id }}')" title="Delete Assignment">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -323,6 +325,14 @@ document.addEventListener('DOMContentLoaded', function() {
         now.setDate(now.getDate() + 7); // 1 week from now
         dueDateInput.value = now.toISOString().slice(0, 16);
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    var bar = document.querySelectorAll('[class^="progress-bar-grade-"]');
+    {% for assignment in assignments %}
+        var bar = document.querySelector('.progress-bar-grade-{{ assignment.id }}');
+        if(bar) bar.style.width = '{{ grade }}%';
+    {% endfor %}
 });
 </script>
 {% endblock %} 

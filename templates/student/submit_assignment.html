@@ -197,13 +197,12 @@
     </div>
 </div>
 
-<script>
 {% if assignment.type == 'code' %}
+<script>
 // Initialize code editor with syntax highlighting
 document.addEventListener('DOMContentLoaded', function() {
     // You can integrate CodeMirror or Monaco Editor here
     const editor = document.getElementById('codeEditor');
-    
     // Simple tab support
     editor.addEventListener('keydown', function(e) {
         if (e.key === 'Tab') {
@@ -220,10 +219,8 @@ function runCode() {
     const code = document.getElementById('codeEditor').value;
     const outputSection = document.getElementById('outputSection');
     const codeOutput = document.getElementById('codeOutput');
-    
     outputSection.style.display = 'block';
     codeOutput.textContent = 'Đang chạy code...';
-    
     // Send code to backend for execution
     fetch('{{ url_for("student.run_code") }}', {
         method: 'POST',
@@ -250,7 +247,6 @@ function runCode() {
 
 function saveAsDraft() {
     const code = document.getElementById('codeEditor').value;
-    
     fetch('{{ url_for("student.save_draft", id=assignment.id) }}', {
         method: 'POST',
         headers: {
@@ -270,8 +266,10 @@ function saveAsDraft() {
         }
     });
 }
+</script>
 {% endif %}
 
+<script>
 // Confirm before submitting
 document.getElementById('submissionForm').addEventListener('submit', function(e) {
     if (!confirm('Bạn có chắc chắn muốn nộp bài?')) {
