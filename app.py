@@ -5,6 +5,7 @@ from database.config import db
 from datetime import datetime
 import requests
 import base64
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -27,6 +28,8 @@ from admin import admin
 from comments import comments
 from certificates import certificates
 from payments import payments
+
+
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -240,6 +243,30 @@ def api_run_code():
             return jsonify({'success': False, 'error': f'Judge0 trả về status {resp.status_code}: {resp.text}'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+#chatbox
+OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_MODEL = "phi3:mini"
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    user_message = request.json.get('message')
+    if not user_message:
+        return jsonify({'error': 'No message provided'}), 400
+    payload_generate = {
+        "model": OLLAMA_MODEL,
+        "prompt": user_message,
+        "stream": False,
+         "options": {
+            "num_predict": 1024  # hoặc 128 nếu vẫn chậm
+        }
+    }
+    try:
+        response = requests.post(OLLAMA_URL, json=payload_generate, timeout=60)
+        data = response.json()
+        content = data.get('response') or '[Không có phản hồi từ AI]'
+        return jsonify({'response': content})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 

@@ -3,190 +3,77 @@
 {% block title %}AI Chatbot - Learning Management System{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col">
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="card-title">AI Learning Assistant</h2>
-                    <a href="/" class="btn btn-sm btn-outline-primary">Back to Home</a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="chatbot-container">
-                        <div class="chatbot-sidebar">
-                            <div class="chatbot-sidebar-header">
-                                <h4 class="chatbot-sidebar-title">Chat History</h4>
-                                <button class="btn btn-sm btn-primary">
-                                    <i class="fas fa-plus"></i> New Chat
-                                </button>
-                            </div>
-                            <div class="chatbot-sessions">
-                                <div class="chatbot-session active">
-                                    <div class="chatbot-session-title">Python Help</div>
-                                    <div class="chatbot-session-date">Today, 10:45 AM</div>
-                                </div>
-                                <div class="chatbot-session">
-                                    <div class="chatbot-session-title">Data Structures</div>
-                                    <div class="chatbot-session-date">Yesterday</div>
-                                </div>
-                                <div class="chatbot-session">
-                                    <div class="chatbot-session-title">Flask Project Help</div>
-                                    <div class="chatbot-session-date">Oct 10, 2023</div>
-                                </div>
-                                <div class="chatbot-session">
-                                    <div class="chatbot-session-title">Math Problem</div>
-                                    <div class="chatbot-session-date">Oct 5, 2023</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chatbot-main">
-                            <div class="chatbot-messages">
-                                <div class="chatbot-message chatbot-message-ai">
-                                    <div class="chatbot-message-content">
-                                        <p>Hello! I'm your AI learning assistant. How can I help you today?</p>
-                                    </div>
-                                    <div class="chatbot-message-time">10:45 AM</div>
-                                </div>
-                                <div class="chatbot-message chatbot-message-user">
-                                    <div class="chatbot-message-content">
-                                        <p>I'm having trouble understanding Python list comprehensions. Can you explain them?</p>
-                                    </div>
-                                    <div class="chatbot-message-time">10:46 AM</div>
-                                </div>
-                                <div class="chatbot-message chatbot-message-ai">
-                                    <div class="chatbot-message-content">
-                                        <p>List comprehensions are a concise way to create lists in Python. They consist of brackets containing an expression followed by a for clause, then zero or more for or if clauses.</p>
-                                        <p>Here's a simple example:</p>
-                                        <pre><code># Creating a list of squares using list comprehension
-squares = [x**2 for x in range(10)]
-print(squares)  # Output: [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]</code></pre>
-                                        <p>You can also add conditions:</p>
-                                        <pre><code># Creating a list of even squares
-even_squares = [x**2 for x in range(10) if x % 2 == 0]
-print(even_squares)  # Output: [0, 4, 16, 36, 64]</code></pre>
-                                        <p>Would you like me to explain more complex examples?</p>
-                                    </div>
-                                    <div class="chatbot-message-time">10:47 AM</div>
-                                </div>
-                                <div class="chatbot-message chatbot-message-user">
-                                    <div class="chatbot-message-content">
-                                        <p>Yes, can you show me how to use nested list comprehensions?</p>
-                                    </div>
-                                    <div class="chatbot-message-time">10:48 AM</div>
-                                </div>
-                                <div class="chatbot-message chatbot-message-ai">
-                                    <div class="chatbot-message-content">
-                                        <p>Nested list comprehensions are list comprehensions within list comprehensions. They're useful for working with multi-dimensional data structures.</p>
-                                        <p>Here's an example of creating a 3x3 matrix:</p>
-                                        <pre><code># Creating a 3x3 matrix using nested list comprehension
-matrix = [[i*3+j+1 for j in range(3)] for i in range(3)]
-print(matrix)  # Output: [[1, 2, 3], [4, 5, 6], [7, 8, 9]]</code></pre>
-                                        <p>You can also flatten a 2D list into a 1D list:</p>
-                                        <pre><code># Flattening a 2D list
-matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-flattened = [num for row in matrix for num in row]
-print(flattened)  # Output: [1, 2, 3, 4, 5, 6, 7, 8, 9]</code></pre>
-                                        <p>Is there a specific use case you're interested in?</p>
-                                    </div>
-                                    <div class="chatbot-message-time">10:49 AM</div>
-                                </div>
-                            </div>
-                            <div class="chatbot-input">
-                                <input type="text" class="chatbot-input-field" placeholder="Type your message here...">
-                                <button class="chatbot-input-button">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="container py-4" style="max-width: 700px;">
+  <h2 class="mb-3 text-center">Chat với AI </h2>
+  <div id="chat-box" class="mb-3 p-3 border rounded bg-light" style="height:400px;overflow-y:auto;font-size:1.1em;"></div>
+  <div class="input-group">
+    <input id="chat-input" type="text" class="form-control" placeholder="Nhập tin nhắn..." autocomplete="off">
+    <button id="send-btn" class="btn btn-primary">Gửi</button>
+  </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chatInput = document.querySelector('.chatbot-input-field');
-        const sendButton = document.querySelector('.chatbot-input-button');
-        const messagesContainer = document.querySelector('.chatbot-messages');
-        
-        // Function to add a new message
-        function addMessage(content, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('chatbot-message');
-            messageDiv.classList.add(isUser ? 'chatbot-message-user' : 'chatbot-message-ai');
-            
-            const now = new Date();
-            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0');
-            
-            messageDiv.innerHTML = `
-                <div class="chatbot-message-content">
-                    <p>${content}</p>
-                </div>
-                <div class="chatbot-message-time">${timeString}</div>
-            `;
-            
-            messagesContainer.appendChild(messageDiv);
-            
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        // Sample responses for demo
-        const sampleResponses = [
-            "That's a great question! Let me explain that concept in more detail...",
-            "I understand your question. Here's how you can approach this problem...",
-            "Based on your course materials, I would recommend the following approach...",
-            "Let me provide you with an example that illustrates this concept...",
-            "There are several ways to solve this. One effective method is..."
-        ];
-        
-        // Function to get a random response
-        function getRandomResponse() {
-            const randomIndex = Math.floor(Math.random() * sampleResponses.length);
-            return sampleResponses[randomIndex];
-        }
-        
-        // Handle sending messages
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (message === '') return;
-            
-            // Add user message
-            addMessage(message, true);
-            
-            // Clear input
-            chatInput.value = '';
-            
-            // Simulate AI response (after a short delay)
-            setTimeout(() => {
-                addMessage(getRandomResponse(), false);
-            }, 1000);
-        }
-        
-        // Event listeners
-        sendButton.addEventListener('click', sendMessage);
-        
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-        
-        // Initialize chat sessions
-        const chatSessions = document.querySelectorAll('.chatbot-session');
-        chatSessions.forEach(session => {
-            session.addEventListener('click', function() {
-                // Remove active class from all sessions
-                chatSessions.forEach(s => s.classList.remove('active'));
-                // Add active class to clicked session
-                this.classList.add('active');
-            });
-        });
+const chatBox = document.getElementById('chat-box');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+let history = [];
+
+function formatBotResponse(text) {
+  // Xử lý code block markdown
+  text = text.replace(/```python\n?([\s\S]*?)```/g, '<pre><code class="language-python">$1</code></pre>');
+  text = text.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+  // Xử lý xuống dòng ngoài code block
+  // (chỉ thay \n thành <br> nếu không nằm trong <pre>...)</pre>
+  // Đơn giản hóa: thay \n thành <br> (nếu muốn tối ưu hơn có thể dùng markdown-it)
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function appendMessage(sender, text) {
+  const msg = document.createElement('div');
+  if (sender === 'AI') {
+    msg.className = 'text-start mb-2';
+    msg.innerHTML = `<span class="badge bg-secondary">${sender}</span> <span class="ms-2">${formatBotResponse(text)}</span>`;
+  } else {
+    msg.className = 'text-end mb-2';
+    msg.innerHTML = `<span class="badge bg-primary">${sender}</span> <span class="ms-2">${text}</span>`;
+  }
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  // Highlight code nếu có
+  msg.querySelectorAll('pre code').forEach(block => { window.hljs && hljs.highlightElement(block); });
+}
+
+function renderHistory() {
+  chatBox.innerHTML = '';
+  for (const m of history) appendMessage(m.sender, m.text);
+}
+
+sendBtn.onclick = async function() {
+  const message = chatInput.value.trim();
+  if (!message) return;
+  history.push({sender: 'Bạn', text: message});
+  renderHistory();
+  chatInput.value = '';
+  history.push({sender: 'AI', text: '<i>Đang trả lời...</i>'});
+  renderHistory();
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message})
     });
+    const data = await res.json();
+    history[history.length-1].text = data.response || data.error;
+    renderHistory();
+  } catch (e) {
+    history[history.length-1].text = 'Lỗi kết nối server';
+    renderHistory();
+  }
+};
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') sendBtn.click();
+});
 </script>
 {% endblock %} 
