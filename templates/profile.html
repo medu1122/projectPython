@@ -17,7 +17,7 @@
     {% endwith %}
 
     <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-8">
+        <div class="col-lg-10 col-xl-8" style="max-width: 900px;">
             <div class="card shadow mb-4">
                 <div class="card-body text-center">
                     <img src="{{ current_user.avatar_url or url_for('static', filename='img/icons8-knowledge-sharing-32.png') }}" class="rounded-circle mb-3" width="120" height="120" alt="Avatar" onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/icons8-knowledge-sharing-32.png') }}';">
@@ -26,9 +26,9 @@
                     <span class="badge bg-primary">{{ current_user.role|title }}</span>
                 </div>
             </div>
-            <div class="card shadow">
-                <div class="card-header pb-0">
-                    <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist" style="border-bottom: 1px solid #dee2e6;">
+            <div class="card shadow mt-4">
+                <div class="card-header pb-0 bg-white" style="border-bottom: none;">
+                    <ul class="nav nav-tabs card-header-tabs justify-content-center" id="profileTabs" role="tablist" style="border-bottom: 1px solid #dee2e6; background: #f8f9fa;">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">Thông tin cá nhân</button>
                         </li>
@@ -46,12 +46,12 @@
                         <div class="tab-pane fade show active" id="info" role="tabpanel">
                             <form method="POST" action="{{ url_for('auth.update_profile') }}">
                                 {{ form.hidden_tag() if form }}
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                <div class="row mb-3">
+                                    <div class="col-6">
                                         <label for="fullname" class="form-label">Họ và tên</label>
                                         <input type="text" class="form-control" id="fullname" name="fullname" value="{{ current_user.fullname or '' }}" required>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-6">
                                         <label for="phone" class="form-label">Số điện thoại</label>
                                         <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone or '' }}">
                                     </div>
@@ -61,7 +61,7 @@
                                     <textarea class="form-control" id="bio" name="bio" rows="2">{{ current_user.bio or '' }}</textarea>
                                 </div>
                                 <div class="d-grid mt-3">
-                                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-user-edit me-1"></i> Lưu thay đổi</button>
                                 </div>
                             </form>
                         </div>
@@ -82,7 +82,7 @@
                                     <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
                                 </div>
                                 <div class="d-grid mt-3">
-                                    <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-key me-1"></i> Đổi mật khẩu</button>
                                 </div>
                             </form>
                         </div>
