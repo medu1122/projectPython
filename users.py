@@ -26,13 +26,6 @@ def change_password(user_id):
     # Đổi mật khẩu
     pass
 
-# Bật/tắt 2FA
-@users.route('/<int:user_id>/2fa', methods=['GET', 'POST'])
-@login_required
-def manage_2fa(user_id):
-    # Bật/tắt 2FA
-    pass
-
 # Xem hoạt động gần đây
 @users.route('/<int:user_id>/activity', methods=['GET'])
 @login_required

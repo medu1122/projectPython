@@ -4,30 +4,39 @@
 
 {% block content %}
 <div class="container py-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10 col-xl-8">
             <div class="card shadow mb-4">
                 <div class="card-body text-center">
-                    <img src="{{ user.avatar_url or '/static/uploads/profile_images/default.png' }}" class="rounded-circle mb-3" width="120" height="120" alt="Avatar">
-                    <h3 class="mb-0">{{ user.fullname or user.username }}</h3>
-                    <p class="text-muted mb-1">{{ user.email }}</p>
-                    <span class="badge bg-primary">{{ user.role|title }}</span>
+                    <img src="{{ current_user.avatar_url or url_for('static', filename='img/icons8-knowledge-sharing-32.png') }}" class="rounded-circle mb-3" width="120" height="120" alt="Avatar" onerror="this.onerror=null;this.src='{{ url_for('static', filename='img/icons8-knowledge-sharing-32.png') }}';">
+                    <h3 class="mb-0">{{ current_user.fullname or current_user.username }}</h3>
+                    <p class="text-muted mb-1">{{ current_user.email }}</p>
+                    <span class="badge bg-primary">{{ current_user.role|title }}</span>
                 </div>
             </div>
             <div class="card shadow">
                 <div class="card-header pb-0">
-                    <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+                    <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist" style="border-bottom: 1px solid #dee2e6;">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">Thông tin cá nhân</button>
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">Thông tin cá nhân</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">Đổi mật khẩu</button>
+                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">Đổi mật khẩu</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="2fa-tab" data-bs-toggle="tab" data-bs-target="#twofa" type="button" role="tab">Xác thực 2 bước</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">Hoạt động</button>
+                            <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab" aria-controls="activity" aria-selected="false">Hoạt động</button>
                         </li>
                     </ul>
                 </div>
@@ -37,28 +46,28 @@
                         <div class="tab-pane fade show active" id="info" role="tabpanel">
                             <form method="POST" action="{{ url_for('auth.update_profile') }}">
                                 {{ form.hidden_tag() if form }}
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
                                         <label for="fullname" class="form-label">Họ và tên</label>
-                                        <input type="text" class="form-control" id="fullname" name="fullname" value="{{ user.fullname or '' }}" required>
+                                        <input type="text" class="form-control" id="fullname" name="fullname" value="{{ current_user.fullname or '' }}" required>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 mb-3">
                                         <label for="phone" class="form-label">Số điện thoại</label>
-                                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}">
+                                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone or '' }}">
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="bio" class="form-label">Giới thiệu bản thân</label>
-                                    <textarea class="form-control" id="bio" name="bio" rows="2">{{ user.bio or '' }}</textarea>
+                                    <textarea class="form-control" id="bio" name="bio" rows="2">{{ current_user.bio or '' }}</textarea>
                                 </div>
-                                <div class="d-grid">
+                                <div class="d-grid mt-3">
                                     <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                                 </div>
                             </form>
                         </div>
                         <!-- Đổi mật khẩu -->
                         <div class="tab-pane fade" id="password" role="tabpanel">
-                            <form method="POST" action="{{ url_for('auth.change_password') }}">
+                            <form method="POST" action="{{ url_for('users.change_password', user_id=current_user.id) }}">
                                 {{ password_form.hidden_tag() if password_form }}
                                 <div class="mb-3">
                                     <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
@@ -72,29 +81,10 @@
                                     <label for="confirm_new_password" class="form-label">Xác nhận mật khẩu mới</label>
                                     <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
                                 </div>
-                                <div class="d-grid">
+                                <div class="d-grid mt-3">
                                     <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
                                 </div>
                             </form>
-                        </div>
-                        <!-- 2FA -->
-                        <div class="tab-pane fade" id="twofa" role="tabpanel">
-                            <div class="mb-3">
-                                {% if user.two_factor_enabled %}
-                                    <div class="alert alert-success"><i class="fas fa-check-circle"></i> 2FA đã bật</div>
-                                    <form action="{{ url_for('auth.disable_2fa') }}" method="get" style="display:inline;">
-                                        <button class="btn btn-danger" type="submit">Tắt 2FA</button>
-                                    </form>
-                                {% else %}
-                                    <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> 2FA chưa bật</div>
-                                    <form action="{{ url_for('auth.enable_2fa') }}" method="get" style="display:inline;">
-                                        <button class="btn btn-success" type="submit">Bật 2FA</button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                            <div class="alert alert-info mt-3">
-                                <strong>2FA</strong> giúp bảo vệ tài khoản bằng mã xác thực khi đăng nhập. Bạn có thể sử dụng email hoặc app xác thực (Google Authenticator, Authy...).
-                            </div>
                         </div>
                         <!-- Hoạt động gần đây -->
                         <div class="tab-pane fade" id="activity" role="tabpanel">

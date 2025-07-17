@@ -84,3 +84,22 @@ def redirect_user_by_role(role):
         return redirect(url_for('teacher_dashboard'))
     else:  # student or any other role
         return redirect(url_for('student_dashboard')) 
+@auth.route('/update-profile', methods=['POST'])
+@login_required
+def update_profile():
+    #xử lý cập nhật thông tin
+    fullname=request.form.get('fullname')
+    phone=request.form.get('phone')
+    bio=request.form.get('bio')
+    #cap nhat thong tin cho curent_user
+    current_user.fullname=fullname
+    current_user.phone=phone
+    current_user.bio=bio
+
+    try:
+        db.session.commit()
+        flash('Your profile has been updated successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi khi cập nhật hồ sơ: {str(e)}', 'danger')
+    return redirect(url_for('profile'))
