@@ -1,0 +1,327 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <i class="fas fa-question-circle"></i> {{ quiz.title }}
+                        </h3>
+                        <div class="quiz-timer">
+                            <span class="badge bg-warning fs-6" id="timer">
+                                <i class="fas fa-clock"></i> <span id="timeLeft">--:--</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if quiz.description %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> {{ quiz.description }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="quiz-info mb-4">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="info-item">
+                                    <h5 class="text-primary">{{ quiz.questions|length }}</h5>
+                                    <small class="text-muted">Câu hỏi</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-item">
+                                    <h5 class="text-success">{{ quiz.time_limit or 15 }}</h5>
+                                    <small class="text-muted">Phút</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-item">
+                                    <h5 class="text-info">{{ quiz.assignment.max_score }}</h5>
+                                    <small class="text-muted">Điểm tối đa</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-item">
+                                    <h5 class="text-warning">{{ quiz.max_attempts }}</h5>
+                                    <small class="text-muted">Lần làm</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" id="quizForm">
+                        <input type="hidden" name="start_time" id="startTime" value="{{ moment().timestamp()|int }}">
+                        
+                        {% if quiz.shuffle_questions %}
+                            {% set questions = quiz.questions|shuffle %}
+                        {% else %}
+                            {% set questions = quiz.questions %}
+                        {% endif %}
+                        
+                        {% for question in questions %}
+                        <div class="question-container border rounded p-4 mb-4">
+                            <div class="question-header mb-3">
+                                <h5 class="mb-2">
+                                    <span class="badge bg-primary me-2">Câu {{ loop.index }}</span>
+                                    {{ question.question_text }}
+                                </h5>
+                                <div class="text-muted">
+                                    <span class="badge bg-info">{{ question.points }} điểm</span>
+                                    <span class="badge bg-secondary">{{ question.question_type }}</span>
+                                </div>
+                            </div>
+                            
+                            {% if question.question_type == 'multiple_choice' %}
+                                <div class="options-container">
+                                    {% for option in question.options %}
+                                    <div class="option-item mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" 
+                                                   name="question_{{ question.id }}" 
+                                                   id="q{{ question.id }}_opt{{ option.id }}" 
+                                                   value="{{ option.id }}" required>
+                                            <label class="form-check-label" for="q{{ question.id }}_opt{{ option.id }}">
+                                                <span class="option-letter me-2">{{ ['A', 'B', 'C', 'D'][loop.index0] }}</span>
+                                                {{ option.option_text }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif question.question_type == 'true_false' %}
+                                <div class="options-container">
+                                    <div class="option-item mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" 
+                                                   name="question_{{ question.id }}" 
+                                                   id="q{{ question.id }}_true" 
+                                                   value="true" required>
+                                            <label class="form-check-label" for="q{{ question.id }}_true">
+                                                <i class="fas fa-check text-success me-2"></i>Đúng
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="option-item mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" 
+                                                   name="question_{{ question.id }}" 
+                                                   id="q{{ question.id }}_false" 
+                                                   value="false" required>
+                                            <label class="form-check-label" for="q{{ question.id }}_false">
+                                                <i class="fas fa-times text-danger me-2"></i>Sai
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% elif question.question_type == 'text' %}
+                                <div class="text-answer-container">
+                                    <textarea class="form-control" name="question_{{ question.id }}" 
+                                              rows="3" placeholder="Nhập câu trả lời của bạn..." required></textarea>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="quiz-actions text-center">
+                            <button type="button" class="btn btn-secondary me-2" onclick="saveProgress()">
+                                <i class="fas fa-save"></i> Lưu tiến độ
+                            </button>
+                            <button type="submit" class="btn btn-primary" onclick="return confirmSubmit()">
+                                <i class="fas fa-paper-plane"></i> Nộp bài
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Progress sidebar -->
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Tiến độ làm bài
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="question-nav">
+                        {% for question in quiz.questions %}
+                        <button class="btn btn-sm btn-outline-secondary mb-1 question-nav-btn" 
+                                data-question="{{ loop.index }}" onclick="scrollToQuestion({{ loop.index }})">
+                            {{ loop.index }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> 
+                            Đã trả lời: <span id="answeredCount">0</span>/{{ quiz.questions|length }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.quiz-timer {
+    font-size: 1.2rem;
+}
+
+.info-item h5 {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.question-container {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.question-container:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.option-item {
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.option-item:hover {
+    background-color: #e3f2fd;
+}
+
+.option-letter {
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    text-align: center;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.question-nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 2px;
+}
+
+.question-nav-btn.answered {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.question-nav-btn.current {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.sticky-top {
+    z-index: 1020;
+}
+</style>
+
+<script>
+let timeLeft = {{ quiz.time_limit or 15 }} * 60; // Convert to seconds
+let timerInterval;
+
+function updateTimer() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    document.getElementById('timeLeft').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (timeLeft <= 300) { // 5 minutes left
+        document.getElementById('timer').classList.remove('bg-warning');
+        document.getElementById('timer').classList.add('bg-danger');
+    }
+    
+    if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        alert('Hết thời gian làm bài!');
+        document.getElementById('quizForm').submit();
+    }
+    
+    timeLeft--;
+}
+
+function updateProgress() {
+    const answered = document.querySelectorAll('input[type="radio"]:checked, textarea[value!=""]').length;
+    const total = {{ quiz.questions|length }};
+    const percentage = (answered / total) * 100;
+    
+    document.getElementById('progressBar').style.width = percentage + '%';
+    document.getElementById('answeredCount').textContent = answered;
+    
+    // Update question nav buttons
+    document.querySelectorAll('.question-nav-btn').forEach((btn, index) => {
+        const questionNum = index + 1;
+        const questionAnswered = document.querySelector(`input[name="question_${questionNum}"]:checked`) ||
+                                document.querySelector(`textarea[name="question_${questionNum}"]`).value.trim();
+        
+        btn.classList.remove('answered', 'current');
+        if (questionAnswered) {
+            btn.classList.add('answered');
+        }
+    });
+}
+
+function scrollToQuestion(questionNum) {
+    const questionElement = document.querySelectorAll('.question-container')[questionNum - 1];
+    questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Update current question indicator
+    document.querySelectorAll('.question-nav-btn').forEach(btn => btn.classList.remove('current'));
+    document.querySelector(`[data-question="${questionNum}"]`).classList.add('current');
+}
+
+function saveProgress() {
+    // In a real implementation, this would save to localStorage or send to server
+    alert('Tiến độ đã được lưu!');
+}
+
+function confirmSubmit() {
+    const answered = document.querySelectorAll('input[type="radio"]:checked, textarea[value!=""]').length;
+    const total = {{ quiz.questions|length }};
+    
+    if (answered < total) {
+        return confirm(`Bạn chưa trả lời ${total - answered} câu hỏi. Bạn có chắc muốn nộp bài?`);
+    }
+    
+    return confirm('Bạn có chắc muốn nộp bài?');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    timerInterval = setInterval(updateTimer, 1000);
+    updateProgress();
+    
+    // Listen for changes to update progress
+    document.addEventListener('change', updateProgress);
+    document.addEventListener('input', updateProgress);
+    
+    // Auto-save every 30 seconds
+    setInterval(saveProgress, 30000);
+});
+</script>
+{% endblock %} 

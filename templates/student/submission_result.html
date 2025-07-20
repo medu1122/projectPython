@@ -1,0 +1,326 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Kết quả bài nộp
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Thông tin tổng quan -->
+                    <div class="result-summary mb-4">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-primary">{{ submission.score }}/{{ assignment.max_score }}</h4>
+                                    <small class="text-muted">Điểm số</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-success">{{ "%.1f"|format((submission.score / assignment.max_score) * 100) }}%</h4>
+                                    <small class="text-muted">Tỷ lệ đúng</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-info">{{ submission.time_taken // 60 }}:{{ "%02d"|format(submission.time_taken % 60) }}</h4>
+                                    <small class="text-muted">Thời gian làm</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-warning">{{ submission.submitted_at.strftime('%d/%m/%Y %H:%M') }}</h4>
+                                    <small class="text-muted">Ngày nộp</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Đánh giá kết quả -->
+                    <div class="result-evaluation mb-4">
+                        {% set percentage = (submission.score / assignment.max_score) * 100 %}
+                        {% if percentage >= 90 %}
+                            <div class="alert alert-success">
+                                <h5><i class="fas fa-trophy"></i> Xuất sắc!</h5>
+                                <p>Bạn đã hoàn thành bài tập với kết quả rất tốt. Hãy tiếp tục phát huy!</p>
+                            </div>
+                        {% elif percentage >= 80 %}
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-star"></i> Tốt!</h5>
+                                <p>Bạn đã làm bài rất tốt. Có thể cải thiện thêm một chút nữa.</p>
+                            </div>
+                        {% elif percentage >= 70 %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-thumbs-up"></i> Khá!</h5>
+                                <p>Kết quả khá tốt. Hãy ôn tập thêm để cải thiện điểm số.</p>
+                            </div>
+                        {% elif percentage >= 60 %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle"></i> Trung bình!</h5>
+                                <p>Bạn cần ôn tập thêm để nắm vững kiến thức hơn.</p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <h5><i class="fas fa-times-circle"></i> Cần cải thiện!</h5>
+                                <p>Bạn cần ôn tập lại kiến thức và làm lại bài tập.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Code đã nộp -->
+                    <div class="submitted-code mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-code"></i> Code đã nộp
+                        </h5>
+                        <div class="code-display">
+                            <pre class="bg-dark text-white p-3 rounded" style="max-height: 300px; overflow-y: auto; font-size: 13px;">{{ submission.content }}</pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Kết quả test cases -->
+                    {% if submission.test_results %}
+                    <div class="test-results mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-vial"></i> Kết quả test cases
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Input</th>
+                                        <th>Expected</th>
+                                        <th>Output</th>
+                                        <th>Kết quả</th>
+                                        <th>Điểm</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test in submission.test_results|from_json %}
+                                    <tr class="{% if test.passed %}table-success{% else %}table-danger{% endif %}">
+                                        <td>{{ test.test_case }}</td>
+                                        <td><code>{{ test.input }}</code></td>
+                                        <td><code>{{ test.expected }}</code></td>
+                                        <td><code>{{ test.actual }}</code></td>
+                                        <td>
+                                            {% if test.passed %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check"></i> PASS
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times"></i> FAIL
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ test.score }}/25</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Thống kê chi tiết -->
+                    <div class="detailed-stats mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-bar"></i> Thống kê chi tiết
+                        </h5>
+                        
+                        {% if submission.test_results %}
+                        {% set test_results = submission.test_results|from_json %}
+                        {% set passed_tests = test_results|selectattr('passed', 'equalto', true)|list %}
+                        {% set total_tests = test_results|length %}
+                        {% set passed_count = passed_tests|length %}
+                        {% set failed_count = total_tests - passed_count %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded p-3 mb-3">
+                                    <h6 class="text-success">
+                                        <i class="fas fa-check-circle"></i> Test cases đúng
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fs-4 fw-bold text-success">{{ passed_count }}</span>
+                                        <span class="text-muted">{{ "%.1f"|format((passed_count / total_tests) * 100) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded p-3 mb-3">
+                                    <h6 class="text-danger">
+                                        <i class="fas fa-times-circle"></i> Test cases sai
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fs-4 fw-bold text-danger">{{ failed_count }}</span>
+                                        <span class="text-muted">{{ "%.1f"|format((failed_count / total_tests) * 100) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Biểu đồ phân bố điểm -->
+                        <div class="score-distribution mt-3">
+                            <h6>Phân bố điểm theo test case:</h6>
+                            <div class="progress" style="height: 30px;">
+                                {% for test in test_results %}
+                                <div class="progress-bar {% if test.passed %}bg-success{% else %}bg-danger{% endif %}" 
+                                     style="width: {{ (25 / assignment.max_score) * 100 }}%"
+                                     title="Test {{ test.test_case }}: {{ test.score }}/25 điểm">
+                                    {{ test.score }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Phân tích code -->
+                    <div class="code-analysis mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-microscope"></i> Phân tích code
+                        </h5>
+                        
+                        {% set code_lines = submission.content.split('\n')|length %}
+                        {% set code_chars = submission.content|length %}
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="analysis-item text-center p-3 border rounded">
+                                    <h6 class="text-primary">{{ code_lines }}</h6>
+                                    <small class="text-muted">Dòng code</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="analysis-item text-center p-3 border rounded">
+                                    <h6 class="text-info">{{ code_chars }}</h6>
+                                    <small class="text-muted">Ký tự</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="analysis-item text-center p-3 border rounded">
+                                    <h6 class="text-success">{{ "%.2f"|format(code_chars / code_lines) }}</h6>
+                                    <small class="text-muted">Ký tự/dòng</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gợi ý cải thiện -->
+                        <div class="improvement-suggestions mt-3">
+                            <h6>Gợi ý cải thiện:</h6>
+                            <ul class="list-group list-group-flush">
+                                {% if percentage < 100 %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-lightbulb text-warning"></i>
+                                    Kiểm tra lại logic của code, đặc biệt là các trường hợp đặc biệt
+                                </li>
+                                {% endif %}
+                                {% if code_lines > 50 %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-lightbulb text-info"></i>
+                                    Có thể tối ưu hóa code để giảm số dòng
+                                </li>
+                                {% endif %}
+                                {% if code_chars / code_lines > 80 %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-lightbulb text-success"></i>
+                                    Code có thể được viết gọn gàng hơn
+                                </li>
+                                {% endif %}
+                                {% if percentage >= 100 %}
+                                <li class="list-group-item">
+                                    <i class="fas fa-trophy text-success"></i>
+                                    Code hoạt động hoàn hảo! Hãy thử tối ưu hóa thêm
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Hành động -->
+                    <div class="actions text-center">
+                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-home"></i> Về trang chủ
+                        </a>
+                        <a href="{{ url_for('assignments.view_assignment', assignment_id=assignment.id) }}" class="btn btn-primary me-2">
+                            <i class="fas fa-redo"></i> Làm lại
+                        </a>
+                        {% if assignment.max_submissions > (existing_submissions|length) %}
+                        <a href="{{ url_for('student_submit_assignment', assignment_id=assignment.id) }}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Nộp lại
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.result-item h4 {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.stat-card {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.analysis-item {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.analysis-item:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.code-display pre {
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+}
+
+.score-distribution .progress-bar {
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+.improvement-suggestions .list-group-item {
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.improvement-suggestions .list-group-item:hover {
+    border-left-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.test-results table {
+    font-size: 14px;
+}
+
+.test-results code {
+    background-color: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+</style>
+{% endblock %} 

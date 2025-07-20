@@ -1,0 +1,284 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Thông tin bài trắc nghiệm -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i> Chỉnh sửa bài trắc nghiệm
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="update_quiz">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="title" class="form-label">Tiêu đề</label>
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       value="{{ quiz.title }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="time_limit" class="form-label">Thời gian (phút)</label>
+                                <input type="number" class="form-control" id="time_limit" name="time_limit" 
+                                       value="{{ quiz.time_limit or 15 }}" min="1" max="180">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ quiz.description }}</textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="max_attempts" class="form-label">Số lần làm bài</label>
+                                <select class="form-select" id="max_attempts" name="max_attempts">
+                                    <option value="1" {% if quiz.max_attempts == 1 %}selected{% endif %}>1 lần</option>
+                                    <option value="2" {% if quiz.max_attempts == 2 %}selected{% endif %}>2 lần</option>
+                                    <option value="3" {% if quiz.max_attempts == 3 %}selected{% endif %}>3 lần</option>
+                                    <option value="5" {% if quiz.max_attempts == 5 %}selected{% endif %}>5 lần</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tùy chọn</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shuffle_questions" 
+                                           name="shuffle_questions" {% if quiz.shuffle_questions %}checked{% endif %}>
+                                    <label class="form-check-label" for="shuffle_questions">
+                                        Xáo trộn câu hỏi
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show_correct_answers" 
+                                           name="show_correct_answers" {% if quiz.show_correct_answers %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_correct_answers">
+                                        Hiển thị đáp án
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Cập nhật
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Danh sách câu hỏi -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Danh sách câu hỏi ({{ quiz.questions|length }})
+                    </h5>
+                    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addQuestionModal">
+                        <i class="fas fa-plus"></i> Thêm câu hỏi
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if quiz.questions %}
+                        {% for question in quiz.questions %}
+                        <div class="question-item border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2">
+                                        <span class="badge bg-primary me-2">{{ loop.index }}</span>
+                                        {{ question.question_text }}
+                                    </h6>
+                                    <div class="text-muted small mb-2">
+                                        <span class="badge bg-info">{{ question.points }} điểm</span>
+                                        <span class="badge bg-secondary">{{ question.question_type }}</span>
+                                    </div>
+                                    
+                                    {% if question.question_type == 'multiple_choice' %}
+                                    <div class="options-list">
+                                        {% for option in question.options %}
+                                        <div class="option-item">
+                                            <i class="fas fa-circle me-2 {% if option.is_correct %}text-success{% else %}text-muted{% endif %}"></i>
+                                            {{ option.option_text }}
+                                            {% if option.is_correct %}
+                                                <span class="badge bg-success ms-2">Đúng</span>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <form method="POST" class="ms-2" onsubmit="return confirm('Bạn có chắc muốn xóa câu hỏi này?')">
+                                    <input type="hidden" name="action" value="delete_question">
+                                    <input type="hidden" name="question_id" value="{{ question.id }}">
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-question-circle fa-3x mb-3"></i>
+                            <p>Chưa có câu hỏi nào. Hãy thêm câu hỏi đầu tiên!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Thống kê -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Thống kê
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-primary">{{ quiz.questions|length }}</h4>
+                                <small class="text-muted">Câu hỏi</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-success">{{ quiz.time_limit or 15 }}</h4>
+                                <small class="text-muted">Phút</small>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-info">{{ quiz.max_attempts }}</h4>
+                                <small class="text-muted">Lần làm</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-warning">{{ quiz.assignment.max_score }}</h4>
+                                <small class="text-muted">Điểm tối đa</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hành động -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Hành động
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('teacher_assignments') }}" class="btn btn-secondary w-100 mb-2">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                    <a href="{{ url_for('student_take_quiz', quiz_id=quiz.id) }}" class="btn btn-info w-100 mb-2" target="_blank">
+                        <i class="fas fa-eye"></i> Xem trước
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm câu hỏi -->
+<div class="modal fade" id="addQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> Thêm câu hỏi mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="add_question">
+                    
+                    <div class="mb-3">
+                        <label for="question_text" class="form-label">Nội dung câu hỏi *</label>
+                        <textarea class="form-control" id="question_text" name="question_text" rows="3" required
+                                  placeholder="Nhập nội dung câu hỏi..."></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="question_type" class="form-label">Loại câu hỏi</label>
+                            <select class="form-select" id="question_type" name="question_type">
+                                <option value="multiple_choice">Trắc nghiệm</option>
+                                <option value="true_false">Đúng/Sai</option>
+                                <option value="text">Tự luận</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="points" class="form-label">Điểm</label>
+                            <input type="number" class="form-control" id="points" name="points" 
+                                   value="10" min="1" max="100" step="0.5">
+                        </div>
+                    </div>
+                    
+                    <div id="optionsSection">
+                        <label class="form-label">Các lựa chọn</label>
+                        {% for i in range(1, 5) %}
+                        <div class="mb-2">
+                            <div class="input-group">
+                                <div class="input-group-text">
+                                    <input class="form-check-input mt-0" type="radio" 
+                                           name="correct_option" value="{{ i }}" required>
+                                </div>
+                                <input type="text" class="form-control" name="option_{{ i }}" 
+                                       placeholder="Lựa chọn {{ i }}" required>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Thêm câu hỏi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.question-item {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.question-item:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.option-item {
+    padding: 5px 0;
+    border-left: 3px solid #dee2e6;
+    padding-left: 10px;
+    margin: 5px 0;
+}
+
+.stat-item h4 {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.options-list {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+</style>
+{% endblock %} 

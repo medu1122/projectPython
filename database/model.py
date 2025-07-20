@@ -217,13 +217,32 @@ class Assignment(db.Model):
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    type = db.Column(db.String(50), nullable=False)  # code, quiz, essay
+    type = db.Column(db.String(50), nullable=False)  # code, quiz, essay, file
+    language = db.Column(db.String(50), nullable=True)  # python, perl, java, etc.
+    test_cases = db.Column(db.Text, nullable=True)  # JSON string of test cases
+    time_limit = db.Column(db.Integer, nullable=True)  # Time limit in minutes
+    max_submissions = db.Column(db.Integer, default=3)  # Maximum submission attempts
     due_date = db.Column(db.DateTime, nullable=True)
     max_score = db.Column(db.Float, default=100.0)
+    is_active = db.Column(db.Boolean, default=True)
+    allow_late_submission = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
     submissions = db.relationship('AssignmentSubmission', backref='assignment', lazy=True)
+    
     def __repr__(self):
         return f'<Assignment {self.title}>'
+    
+    @property
+    def submission_count(self):
+        return len(self.submissions)
+    
+    @property
+    def is_overdue(self):
+        if not self.due_date:
+            return False
+        return datetime.now() > self.due_date
 
 class AssignmentSubmission(db.Model):
     __tablename__ = 'assignment_submissions'
@@ -233,9 +252,112 @@ class AssignmentSubmission(db.Model):
     content = db.Column(db.Text, nullable=True)
     score = db.Column(db.Float, nullable=True)
     submitted_at = db.Column(db.DateTime, default=datetime.now)
-    user = db.relationship('User', backref='assignment_submissions', lazy=True)
+    
+    # File upload fields
+    filename = db.Column(db.String(255), nullable=True)  # Tên file gốc
+    file_path = db.Column(db.String(500), nullable=True)  # Đường dẫn file trên server
+    file_size = db.Column(db.Integer, nullable=True)  # Kích thước file (bytes)
+    file_type = db.Column(db.String(100), nullable=True)  # MIME type
+    notes = db.Column(db.Text, nullable=True)  # Ghi chú của sinh viên
+    
+    # Grading fields
+    is_graded = db.Column(db.Boolean, default=False)
+    graded_at = db.Column(db.DateTime, nullable=True)
+    graded_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    feedback = db.Column(db.Text, nullable=True)  # Nhận xét của giảng viên
+    grading_details = db.Column(db.Text, nullable=True)  # JSON string chứa chi tiết chấm điểm
+    
+    # Additional fields for code submissions
+    time_taken = db.Column(db.Integer, nullable=True)  # Thời gian làm bài (giây)
+    test_results = db.Column(db.Text, nullable=True)  # JSON string chứa kết quả test cases
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='assignment_submissions')
+    graded_by = db.relationship('User', foreign_keys=[graded_by_id], backref='graded_submissions')
+    
     def __repr__(self):
         return f'<Submission Assignment:{self.assignment_id} User:{self.user_id}>'
+
+class Quiz(db.Model):
+    __tablename__ = 'quizzes'
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.Integer, db.ForeignKey('assignments.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    time_limit = db.Column(db.Integer, nullable=True)  # Time limit in minutes
+    max_attempts = db.Column(db.Integer, default=1)  # Number of attempts allowed
+    shuffle_questions = db.Column(db.Boolean, default=False)
+    show_correct_answers = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
+    questions = db.relationship('QuizQuestion', backref='quiz', lazy=True, order_by='QuizQuestion.order_index')
+    
+    def __repr__(self):
+        return f'<Quiz {self.title}>'
+
+class QuizQuestion(db.Model):
+    __tablename__ = 'quiz_questions'
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(50), default='multiple_choice')  # multiple_choice, true_false, text
+    points = db.Column(db.Float, default=1.0)
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
+    options = db.relationship('QuizOption', backref='question', lazy=True, order_by='QuizOption.order_index')
+    
+    def __repr__(self):
+        return f'<QuizQuestion {self.question_text[:50]}...>'
+
+class QuizOption(db.Model):
+    __tablename__ = 'quiz_options'
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('quiz_questions.id'), nullable=False)
+    option_text = db.Column(db.String(500), nullable=False)
+    is_correct = db.Column(db.Boolean, default=False)
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    def __repr__(self):
+        return f'<QuizOption {self.option_text[:30]}...>'
+
+class QuizSubmission(db.Model):
+    __tablename__ = 'quiz_submissions'
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    score = db.Column(db.Float, nullable=True)
+    max_score = db.Column(db.Float, nullable=True)
+    time_taken = db.Column(db.Integer, nullable=True)  # Time taken in seconds
+    submitted_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
+    answers = db.relationship('QuizAnswer', backref='submission', lazy=True)
+    user = db.relationship('User', backref='quiz_submissions', lazy=True)
+    
+    def __repr__(self):
+        return f'<QuizSubmission Quiz:{self.quiz_id} User:{self.user_id}>'
+
+class QuizAnswer(db.Model):
+    __tablename__ = 'quiz_answers'
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.Integer, db.ForeignKey('quiz_submissions.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('quiz_questions.id'), nullable=False)
+    selected_option_id = db.Column(db.Integer, db.ForeignKey('quiz_options.id'), nullable=True)
+    answer_text = db.Column(db.Text, nullable=True)  # For text questions
+    is_correct = db.Column(db.Boolean, nullable=True)
+    points_earned = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
+    question = db.relationship('QuizQuestion', backref='answers', lazy=True)
+    selected_option = db.relationship('QuizOption', backref='answers', lazy=True)
+    
+    def __repr__(self):
+        return f'<QuizAnswer Question:{self.question_id} Correct:{self.is_correct}>'
 
 class Comment(db.Model):
     __tablename__ = 'comments'

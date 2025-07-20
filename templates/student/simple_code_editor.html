@@ -1,0 +1,413 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Code Editor (Trái) -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-code"></i> Code Editor Online
+                        </h4>
+                        <div class="editor-controls">
+                            <select id="languageSelect" class="form-select form-select-sm" style="width: auto;">
+                                <option value="python">Python</option>
+                                <option value="perl">Perl</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <div class="code-editor-container">
+                        <div class="editor-toolbar">
+                            <div class="toolbar-left">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="formatCode()">
+                                    <i class="fas fa-magic"></i> Format
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
+                                    <i class="fas fa-palette"></i> Theme
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleFullscreen()">
+                                    <i class="fas fa-expand"></i> Fullscreen
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="clearCode()">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                            </div>
+                            <div class="toolbar-right">
+                                <span class="text-muted small" id="lineInfo">Line 1, Col 1</span>
+                            </div>
+                        </div>
+                        
+                        <div class="editor-main">
+                            <textarea id="codeEditor" class="form-control" 
+                                      placeholder="// Nhập code của bạn ở đây...
+// Ví dụ Python:
+print('Hello, World!')
+n = 5
+total = sum(range(1, n + 1))
+print(f'Tổng từ 1 đến {n}: {total}')
+
+// Ví dụ Perl:
+print 'Hello from Perl!\n';
+my $n = 10;
+my $sum = 0;
+for (my $i = 1; $i <= $n; $i++) {
+    $sum += $i;
+}
+print 'Sum from 1 to $n: $sum\n';"
+                                      style="height: 500px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5;"
+                                      spellcheck="false"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar với Output (Phải) -->
+        <div class="col-lg-4">
+            <!-- Action Buttons -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Hành động
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success" onclick="runCode()">
+                            <i class="fas fa-play"></i> Chạy code
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="saveCode()">
+                            <i class="fas fa-save"></i> Lưu code
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="loadCode()">
+                            <i class="fas fa-folder-open"></i> Tải code
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Output -->
+            <div class="card mb-3" id="outputCard" style="display:none;">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-terminal"></i> Kết quả chạy code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="outputContent">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Đang chạy code...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Examples -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> Ví dụ code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <button class="list-group-item list-group-item-action" onclick="loadExample('python-hello')">
+                            Python - Hello World
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadExample('python-sum')">
+                            Python - Tính tổng
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadExample('python-fibonacci')">
+                            Python - Dãy Fibonacci
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadExample('perl-hello')">
+                            Perl - Hello World
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="loadExample('perl-sum')">
+                            Perl - Tính tổng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.code-editor-container {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.editor-toolbar {
+    background: #f8f9fa;
+    padding: 8px 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editor-main {
+    position: relative;
+}
+
+#codeEditor {
+    border: none;
+    outline: none;
+    resize: vertical;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 15px;
+}
+
+#codeEditor.dark-theme {
+    background: #2d2d2d;
+    color: #f8f8f2;
+}
+
+.output-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #c3e6cb;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
+.output-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background: white;
+}
+</style>
+
+<script>
+let currentTheme = 'dark';
+let isFullscreen = false;
+let saveCount = 0;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    const editor = document.getElementById('codeEditor');
+    
+    // Tab support
+    editor.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 4;
+        }
+    });
+    
+    // Real-time line tracking
+    editor.addEventListener('input', updateLineInfo);
+    editor.addEventListener('click', updateLineInfo);
+    editor.addEventListener('keyup', updateLineInfo);
+    
+    updateLineInfo();
+});
+
+function updateLineInfo() {
+    const textarea = document.getElementById('codeEditor');
+    const lines = textarea.value.split('\n');
+    const currentLine = lines.length;
+    const currentCol = textarea.value.substring(0, textarea.selectionStart).split('\n').pop().length + 1;
+    document.getElementById('lineInfo').textContent = `Line ${currentLine}, Col ${currentCol}`;
+}
+
+function runCode() {
+    const code = document.getElementById('codeEditor').value;
+    const language = document.getElementById('languageSelect').value;
+    
+    if (!code.trim()) {
+        alert('Vui lòng nhập code trước khi chạy!');
+        return;
+    }
+    
+    // Show output card
+    document.getElementById('outputCard').style.display = 'block';
+    document.getElementById('outputContent').innerHTML = 
+        '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Đang chạy code...</div>';
+    
+    fetch('/api/run-code', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code: code,
+            language: language
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('outputContent').innerHTML = 
+                `<div class="output-success">${data.output}</div>`;
+        } else {
+            document.getElementById('outputContent').innerHTML = 
+                `<div class="output-error">Error: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('outputContent').innerHTML = 
+            `<div class="output-error">Error: ${error.message}</div>`;
+    });
+}
+
+function formatCode() {
+    const editor = document.getElementById('codeEditor');
+    const code = editor.value;
+    
+    // Simple formatting
+    const lines = code.split('\n');
+    const formattedLines = lines.map(line => line.trim()).filter(line => line);
+    editor.value = formattedLines.join('\n');
+    
+    updateLineInfo();
+}
+
+function toggleTheme() {
+    const editor = document.getElementById('codeEditor');
+    if (currentTheme === 'dark') {
+        editor.style.backgroundColor = '#ffffff';
+        editor.style.color = '#000000';
+        currentTheme = 'light';
+    } else {
+        editor.style.backgroundColor = '#1e1e1e';
+        editor.style.color = '#d4d4d4';
+        currentTheme = 'dark';
+    }
+}
+
+function toggleFullscreen() {
+    const container = document.querySelector('.code-editor-container');
+    if (!isFullscreen) {
+        container.classList.add('fullscreen');
+        isFullscreen = true;
+    } else {
+        container.classList.remove('fullscreen');
+        isFullscreen = false;
+    }
+}
+
+function clearCode() {
+    if (confirm('Bạn có chắc muốn xóa tất cả code?')) {
+        document.getElementById('codeEditor').value = '';
+        updateLineInfo();
+    }
+}
+
+function saveCode() {
+    const code = document.getElementById('codeEditor').value;
+    const language = document.getElementById('languageSelect').value;
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_');
+    const filename = `code_${language}_${timestamp}.txt`;
+    
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    saveCount++;
+    alert(`Đã lưu code thành công! (Lần ${saveCount})`);
+}
+
+function loadCode() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.py,.pl';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('codeEditor').value = e.target.result;
+                updateLineInfo();
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+function loadExample(type) {
+    const examples = {
+        'python-hello': `print("Hello, World!")
+print("Chào mừng bạn đến với Python!")`,
+        
+        'python-sum': `# Tính tổng từ 1 đến n
+n = int(input("Nhập số n: "))
+total = 0
+for i in range(1, n + 1):
+    total += i
+print(f"Tổng từ 1 đến {n}: {total}")`,
+        
+        'python-fibonacci': `# Dãy Fibonacci
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+n = int(input("Nhập số n: "))
+print(f"Số Fibonacci thứ {n}: {fibonacci(n)}")`,
+        
+        'perl-hello': `print "Hello, World!\n";
+print "Chào mừng bạn đến với Perl!\n";`,
+        
+        'perl-sum': `# Tính tổng từ 1 đến n
+print "Nhập số n: ";
+my $n = <STDIN>;
+chomp $n;
+
+my $sum = 0;
+for (my $i = 1; $i <= $n; $i++) {
+    $sum += $i;
+}
+print "Tổng từ 1 đến $n: $sum\n";`
+    };
+    
+    if (examples[type]) {
+        document.getElementById('codeEditor').value = examples[type];
+        
+        // Set language
+        if (type.startsWith('python')) {
+            document.getElementById('languageSelect').value = 'python';
+        } else if (type.startsWith('perl')) {
+            document.getElementById('languageSelect').value = 'perl';
+        }
+        
+        updateLineInfo();
+    }
+}
+</script>
+{% endblock %} 

@@ -266,3 +266,4 @@ def edit_course(course_id):
     categories = Category.query.all()
     levels = ['beginner', 'intermediate', 'advanced']
     return render_template('courses/edit.html', course=course, categories=categories, levels=levels) 
+    

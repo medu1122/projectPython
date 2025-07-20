@@ -1,0 +1,272 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Kết quả bài trắc nghiệm
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Thông tin tổng quan -->
+                    <div class="result-summary mb-4">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-primary">{{ submission.score }}/{{ submission.max_score }}</h4>
+                                    <small class="text-muted">Điểm số</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-success">{{ "%.1f"|format((submission.score / submission.max_score) * 100) }}%</h4>
+                                    <small class="text-muted">Tỷ lệ đúng</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-info">{{ submission.time_taken // 60 }}:{{ "%02d"|format(submission.time_taken % 60) }}</h4>
+                                    <small class="text-muted">Thời gian làm</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="result-item">
+                                    <h4 class="text-warning">{{ submission.submitted_at.strftime('%d/%m/%Y %H:%M') }}</h4>
+                                    <small class="text-muted">Ngày nộp</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Đánh giá kết quả -->
+                    <div class="result-evaluation mb-4">
+                        {% set percentage = (submission.score / submission.max_score) * 100 %}
+                        {% if percentage >= 90 %}
+                            <div class="alert alert-success">
+                                <h5><i class="fas fa-trophy"></i> Xuất sắc!</h5>
+                                <p>Bạn đã hoàn thành bài trắc nghiệm với kết quả rất tốt. Hãy tiếp tục phát huy!</p>
+                            </div>
+                        {% elif percentage >= 80 %}
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-star"></i> Tốt!</h5>
+                                <p>Bạn đã làm bài rất tốt. Có thể cải thiện thêm một chút nữa.</p>
+                            </div>
+                        {% elif percentage >= 70 %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-thumbs-up"></i> Khá!</h5>
+                                <p>Kết quả khá tốt. Hãy ôn tập thêm để cải thiện điểm số.</p>
+                            </div>
+                        {% elif percentage >= 60 %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle"></i> Trung bình!</h5>
+                                <p>Bạn cần ôn tập thêm để nắm vững kiến thức hơn.</p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <h5><i class="fas fa-times-circle"></i> Cần cải thiện!</h5>
+                                <p>Bạn cần ôn tập lại kiến thức và làm lại bài trắc nghiệm.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Chi tiết từng câu hỏi -->
+                    <div class="question-details">
+                        <h5 class="mb-3">
+                            <i class="fas fa-list"></i> Chi tiết từng câu hỏi
+                        </h5>
+                        
+                        {% for answer in submission.answers %}
+                        <div class="question-result border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2">
+                                        <span class="badge bg-primary me-2">Câu {{ loop.index }}</span>
+                                        {{ answer.question.question_text }}
+                                    </h6>
+                                    
+                                    <div class="text-muted small mb-2">
+                                        <span class="badge bg-info">{{ answer.question.points }} điểm</span>
+                                        <span class="badge bg-secondary">{{ answer.question.question_type }}</span>
+                                    </div>
+                                    
+                                    <!-- Câu trả lời của học sinh -->
+                                    <div class="student-answer mb-2">
+                                        <strong>Câu trả lời của bạn:</strong>
+                                        {% if answer.question.question_type == 'multiple_choice' %}
+                                            {% if answer.selected_option %}
+                                                <span class="ms-2">{{ answer.selected_option.option_text }}</span>
+                                            {% else %}
+                                                <span class="ms-2 text-muted">Không trả lời</span>
+                                            {% endif %}
+                                        {% elif answer.question.question_type == 'text' %}
+                                            <div class="ms-2 p-2 bg-light rounded">
+                                                {{ answer.answer_text or 'Không trả lời' }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Đáp án đúng -->
+                                    {% if submission.quiz.show_correct_answers %}
+                                    <div class="correct-answer">
+                                        <strong>Đáp án đúng:</strong>
+                                        {% if answer.question.question_type == 'multiple_choice' %}
+                                            {% for option in answer.question.options %}
+                                                {% if option.is_correct %}
+                                                    <span class="ms-2 text-success">{{ option.option_text }}</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% elif answer.question.question_type == 'text' %}
+                                            {% for option in answer.question.options %}
+                                                {% if option.is_correct %}
+                                                    <div class="ms-2 p-2 bg-success text-white rounded">
+                                                        {{ option.option_text }}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="ms-3">
+                                    {% if answer.is_correct %}
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fas fa-check"></i> Đúng
+                                        </span>
+                                        <div class="text-success small mt-1">
+                                            +{{ answer.points_earned }} điểm
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-danger fs-6">
+                                            <i class="fas fa-times"></i> Sai
+                                        </span>
+                                        <div class="text-danger small mt-1">
+                                            +0 điểm
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Thống kê chi tiết -->
+                    <div class="detailed-stats mt-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-bar"></i> Thống kê chi tiết
+                        </h5>
+                        
+                        {% set correct_answers = submission.answers|selectattr('is_correct', 'equalto', true)|list %}
+                        {% set total_questions = submission.answers|length %}
+                        {% set correct_count = correct_answers|length %}
+                        {% set incorrect_count = total_questions - correct_count %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded p-3 mb-3">
+                                    <h6 class="text-success">
+                                        <i class="fas fa-check-circle"></i> Câu trả lời đúng
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fs-4 fw-bold text-success">{{ correct_count }}</span>
+                                        <span class="text-muted">{{ "%.1f"|format((correct_count / total_questions) * 100) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card border rounded p-3 mb-3">
+                                    <h6 class="text-danger">
+                                        <i class="fas fa-times-circle"></i> Câu trả lời sai
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fs-4 fw-bold text-danger">{{ incorrect_count }}</span>
+                                        <span class="text-muted">{{ "%.1f"|format((incorrect_count / total_questions) * 100) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Biểu đồ phân bố điểm -->
+                        <div class="score-distribution mt-3">
+                            <h6>Phân bố điểm theo câu hỏi:</h6>
+                            <div class="progress" style="height: 30px;">
+                                {% for answer in submission.answers %}
+                                <div class="progress-bar {% if answer.is_correct %}bg-success{% else %}bg-danger{% endif %}" 
+                                     style="width: {{ (answer.question.points / submission.max_score) * 100 }}%"
+                                     title="Câu {{ loop.index }}: {{ answer.points_earned }}/{{ answer.question.points }} điểm">
+                                    {{ answer.points_earned }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hành động -->
+                    <div class="quiz-actions text-center mt-4">
+                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary me-2">
+                            <i class="fas fa-home"></i> Về trang chủ
+                        </a>
+                        {% if submission.quiz.max_attempts > 1 %}
+                        <a href="{{ url_for('student_take_quiz', quiz_id=submission.quiz.id) }}" class="btn btn-primary">
+                            <i class="fas fa-redo"></i> Làm lại
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.result-item h4 {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.question-result {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.question-result:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.student-answer {
+    background-color: #e3f2fd;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #2196f3;
+}
+
+.correct-answer {
+    background-color: #e8f5e8;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #4caf50;
+}
+
+.stat-card {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.score-distribution .progress-bar {
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+</style>
+{% endblock %} 

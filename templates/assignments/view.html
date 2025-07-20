@@ -1,23 +1,113 @@
 {% extends 'layout.html' %}
 {% block content %}
 <div class="container mt-4">
-  <h2>{{ assignment.title }}</h2>
-  <p>{{ assignment.description }}</p>
-  <ul class="list-group mb-3">
-    <li class="list-group-item"><b>Loại:</b> {{ assignment.type }}</li>
-    <li class="list-group-item"><b>Hạn nộp:</b> {{ assignment.due_date.strftime('%Y-%m-%d') if assignment.due_date else 'Không có' }}</li>
-    <li class="list-group-item"><b>Điểm tối đa:</b> {{ assignment.max_score }}</li>
-  </ul>
-  {% if submission %}
-    <div class="alert alert-success">Đã nộp bài lúc {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</div>
-    <div class="mb-3"><b>Bài làm:</b><br>{{ submission.content }}</div>
-    {% if submission.score is not none %}
-      <div class="alert alert-info">Điểm: {{ submission.score }}</div>
-    {% else %}
-      <div class="alert alert-warning">Chưa được chấm điểm</div>
-    {% endif %}
-  {% else %}
-    <a href="{{ url_for('assignments.submit_assignment', assignment_id=assignment.id) }}" class="btn btn-primary">Nộp bài</a>
-  {% endif %}
+  <div class="row">
+    <div class="col-md-8">
+      <h2>{{ assignment.title }}</h2>
+      <div class="assignment-meta mb-3">
+        <span class="badge bg-primary">{{ assignment.type|upper }}</span>
+        {% if assignment.language %}
+          <span class="badge bg-info">{{ assignment.language|upper }}</span>
+        {% endif %}
+        <span class="badge bg-warning">{{ assignment.max_score }} điểm</span>
+        {% if assignment.time_limit %}
+          <span class="badge bg-secondary">{{ assignment.time_limit }} phút</span>
+        {% endif %}
+      </div>
+      
+      <div class="assignment-description mb-4">
+        {{ assignment.description|safe }}
+      </div>
+      
+      {% if assignment.type == 'code' and assignment.test_cases %}
+        <div class="test-cases mb-4">
+          <h4>Test Cases</h4>
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Input</th>
+                  <th>Expected Output</th>
+                  <th>Mô tả</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for test_case in assignment.test_cases|from_json %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td><code>{{ test_case.input }}</code></td>
+                  <td><code>{{ test_case.output }}</code></td>
+                  <td>{{ test_case.description }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+      
+      <div class="assignment-info mb-3">
+        <ul class="list-group">
+          <li class="list-group-item"><b>Loại:</b> {{ assignment.type|title }}</li>
+          <li class="list-group-item"><b>Hạn nộp:</b> {{ assignment.due_date.strftime('%Y-%m-%d %H:%M') if assignment.due_date else 'Không có' }}</li>
+          <li class="list-group-item"><b>Điểm tối đa:</b> {{ assignment.max_score }}</li>
+          {% if assignment.max_submissions %}
+            <li class="list-group-item"><b>Số lần nộp tối đa:</b> {{ assignment.max_submissions }}</li>
+          {% endif %}
+          {% if assignment.allow_late_submission %}
+            <li class="list-group-item"><b>Cho phép nộp muộn:</b> Có</li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5>Trạng thái bài nộp</h5>
+        </div>
+        <div class="card-body">
+          {% if submission %}
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle"></i> Đã nộp bài
+              <br><small>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+            {% if submission.score is not none %}
+              <div class="alert alert-info">
+                <i class="fas fa-star"></i> Điểm: {{ submission.score }}/{{ assignment.max_score }}
+              </div>
+            {% else %}
+              <div class="alert alert-warning">
+                <i class="fas fa-clock"></i> Chưa được chấm điểm
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle"></i> Chưa nộp bài
+            </div>
+          {% endif %}
+          
+          {% if not submission or assignment.allow_late_submission or not assignment.is_overdue %}
+            {% if assignment.type == 'code' %}
+            <a href="{{ url_for('student_code_editor', assignment_id=assignment.id) }}" class="btn btn-success w-100 mb-2">
+              <i class="fas fa-code"></i> Làm bài trực tiếp
+            </a>
+            {% endif %}
+            <a href="{{ url_for('student_file_upload', assignment_id=assignment.id) }}" class="btn btn-info w-100 mb-2">
+              <i class="fas fa-upload"></i> Upload file
+            </a>
+            <a href="{{ url_for('assignments.submit_assignment', assignment_id=assignment.id) }}" class="btn btn-primary w-100">
+              <i class="fas fa-paper-plane"></i> Nộp bài
+            </a>
+          {% else %}
+            <button class="btn btn-secondary w-100" disabled>
+              <i class="fas fa-ban"></i> Hết hạn nộp bài
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %} 

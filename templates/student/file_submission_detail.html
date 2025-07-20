@@ -1,0 +1,311 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">
+                            <i class="fas fa-file-alt"></i> Chi tiết bài nộp
+                        </h3>
+                        <div>
+                            <a href="{{ url_for('assignments.view_assignment', assignment_id=assignment.id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Thông tin tổng quan -->
+                    <div class="submission-overview mb-4">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h4>{{ assignment.title }}</h4>
+                                <p class="text-muted">{{ assignment.description|truncate(200) }}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="submission-status text-end">
+                                    {% if submission.is_graded %}
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fas fa-check-circle"></i> Đã chấm
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning fs-6">
+                                            <i class="fas fa-clock"></i> Chưa chấm
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin bài nộp -->
+                    <div class="submission-info mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-card border rounded p-3">
+                                    <h6><i class="fas fa-info-circle"></i> Thông tin nộp bài</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Thời gian nộp:</strong> {{ submission.submitted_at.strftime('%d/%m/%Y %H:%M:%S') }}</li>
+                                        <li><strong>File:</strong> 
+                                            <a href="{{ url_for('download_submission_file', submission_id=submission.id) }}" 
+                                               class="text-decoration-none">
+                                                <i class="fas fa-download"></i> {{ submission.filename }}
+                                            </a>
+                                        </li>
+                                        <li><strong>Kích thước:</strong> {{ submission.file_size|filesizeformat }}</li>
+                                        <li><strong>Loại file:</strong> {{ submission.file_type }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-card border rounded p-3">
+                                    <h6><i class="fas fa-chart-line"></i> Kết quả</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Điểm:</strong> 
+                                            {% if submission.score is not none %}
+                                                <span class="fw-bold text-primary fs-5">{{ submission.score }}/{{ assignment.max_score }}</span>
+                                                <span class="text-muted">({{ "%.1f"|format((submission.score / assignment.max_score) * 100) }}%)</span>
+                                            {% else %}
+                                                <span class="text-muted">Chưa có</span>
+                                            {% endif %}
+                                        </li>
+                                        <li><strong>Thời gian chấm:</strong> 
+                                            {% if submission.graded_at %}
+                                                {{ submission.graded_at.strftime('%d/%m/%Y %H:%M') }}
+                                            {% else %}
+                                                <span class="text-muted">Chưa chấm</span>
+                                            {% endif %}
+                                        </li>
+                                        <li><strong>Giảng viên chấm:</strong> 
+                                            {% if submission.graded_by %}
+                                                {{ submission.graded_by.name }}
+                                            {% else %}
+                                                <span class="text-muted">Chưa có</span>
+                                            {% endif %}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú của sinh viên -->
+                    {% if submission.notes %}
+                    <div class="student-notes mb-4">
+                        <h5><i class="fas fa-sticky-note"></i> Ghi chú của sinh viên</h5>
+                        <div class="border rounded p-3 bg-light">
+                            {{ submission.notes|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Nội dung file -->
+                    <div class="file-content mb-4">
+                        <h5><i class="fas fa-file-code"></i> Nội dung file</h5>
+                        <div class="file-preview border rounded">
+                            {% if submission.file_type in ['text/plain', 'text/x-python', 'text/x-perl'] %}
+                                <div class="file-header bg-light p-2 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">{{ submission.filename }}</span>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard()">
+                                                <i class="fas fa-copy"></i> Copy
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="downloadFile()">
+                                                <i class="fas fa-download"></i> Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="file-body">
+                                    <pre id="fileContent" class="bg-dark text-light p-3 m-0" style="max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.5;">{{ submission.content }}</pre>
+                                </div>
+                            {% else %}
+                                <div class="file-preview-placeholder text-center p-5">
+                                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                    <h6>File không thể hiển thị trực tiếp</h6>
+                                    <p class="text-muted">Loại file: {{ submission.file_type }}</p>
+                                    <a href="{{ url_for('download_submission_file', submission_id=submission.id) }}" 
+                                       class="btn btn-primary">
+                                        <i class="fas fa-download"></i> Tải xuống file
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Nhận xét của giảng viên -->
+                    {% if submission.feedback %}
+                    <div class="teacher-feedback mb-4">
+                        <h5><i class="fas fa-comment"></i> Nhận xét của giảng viên</h5>
+                        <div class="feedback-content border rounded p-3">
+                            <div class="feedback-header mb-2">
+                                <small class="text-muted">
+                                    Chấm bởi: {{ submission.graded_by.name if submission.graded_by else 'Hệ thống' }} 
+                                    vào {{ submission.graded_at.strftime('%d/%m/%Y %H:%M') if submission.graded_at else '' }}
+                                </small>
+                            </div>
+                            <div class="feedback-body">
+                                {{ submission.feedback|nl2br }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Chi tiết chấm điểm -->
+                    {% if submission.grading_details %}
+                    <div class="grading-details mb-4">
+                        <h5><i class="fas fa-list-check"></i> Chi tiết chấm điểm</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tiêu chí</th>
+                                        <th>Điểm tối đa</th>
+                                        <th>Điểm đạt</th>
+                                        <th>Nhận xét</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for detail in submission.grading_details|from_json %}
+                                    <tr>
+                                        <td>{{ detail.criterion }}</td>
+                                        <td>{{ detail.max_score }}</td>
+                                        <td>
+                                            <span class="fw-bold {% if detail.score == detail.max_score %}text-success{% elif detail.score > 0 %}text-warning{% else %}text-danger{% endif %}">
+                                                {{ detail.score }}
+                                            </span>
+                                        </td>
+                                        <td>{{ detail.comment or '-' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Hành động -->
+                    <div class="actions text-center">
+                        {% if assignment.max_submissions > (existing_submissions|length) %}
+                        <a href="{{ url_for('student_file_upload', assignment_id=assignment.id) }}" class="btn btn-success me-2">
+                            <i class="fas fa-upload"></i> Nộp lại
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('assignments.view_assignment', assignment_id=assignment.id) }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Về bài tập
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-card {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.file-preview {
+    background-color: #f8f9fa;
+}
+
+.file-header {
+    background-color: #e9ecef;
+}
+
+.file-body pre {
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.feedback-content {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+}
+
+.grading-details table {
+    font-size: 14px;
+}
+
+.student-notes, .teacher-feedback {
+    background-color: #f8f9fa;
+}
+
+.file-preview-placeholder {
+    background-color: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+    .submission-status {
+        text-align: left !important;
+        margin-top: 15px;
+    }
+    
+    .info-card {
+        margin-bottom: 15px;
+    }
+    
+    .actions .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .actions .btn:last-child {
+        margin-bottom: 0;
+    }
+}
+</style>
+
+<script>
+function copyToClipboard() {
+    const content = document.getElementById('fileContent').textContent;
+    navigator.clipboard.writeText(content).then(() => {
+        // Show success message
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('Không thể copy nội dung!');
+    });
+}
+
+function downloadFile() {
+    window.open('{{ url_for("download_submission_file", submission_id=submission.id) }}', '_blank');
+}
+
+// Syntax highlighting for code files
+document.addEventListener('DOMContentLoaded', function() {
+    const fileContent = document.getElementById('fileContent');
+    if (fileContent) {
+        // Add line numbers
+        const lines = fileContent.textContent.split('\n');
+        const numberedContent = lines.map((line, index) => {
+            return `<span class="line-number">${(index + 1).toString().padStart(3, ' ')}</span> ${line}`;
+        }).join('\n');
+        fileContent.innerHTML = numberedContent;
+    }
+});
+</script>
+{% endblock %} 

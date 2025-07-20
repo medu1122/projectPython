@@ -47,18 +47,18 @@
                             <form method="POST" action="{{ url_for('auth.update_profile') }}">
                                 {{ form.hidden_tag() if form }}
                                 <div class="row mb-3">
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-4 mb-3">
                                         <label for="fullname" class="form-label">Họ và tên</label>
                                         <input type="text" class="form-control" id="fullname" name="fullname" value="{{ current_user.fullname or '' }}" required>
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-12 col-md-4 mb-3">
                                         <label for="phone" class="form-label">Số điện thoại</label>
                                         <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone or '' }}">
                                     </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="bio" class="form-label">Giới thiệu bản thân</label>
-                                    <textarea class="form-control" id="bio" name="bio" rows="2">{{ current_user.bio or '' }}</textarea>
+                                    <div class="col-12 col-md-4 mb-3">
+                                        <label for="bio" class="form-label">Giới thiệu bản thân</label>
+                                        <textarea class="form-control" id="bio" name="bio" rows="2">{{ current_user.bio or '' }}</textarea>
+                                    </div>
                                 </div>
                                 <div class="d-grid mt-3">
                                     <button type="submit" class="btn btn-primary"><i class="fas fa-user-edit me-1"></i> Lưu thay đổi</button>

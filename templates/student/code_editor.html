@@ -1,124 +1,406 @@
-{% extends "layout.html" %}
-
-{% block title %}Thực hành Code Online - Hệ thống học PERL & PYTHON{% endblock %}
-
+{% extends 'layout.html' %}
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 offset-lg-2 col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>Thực hành Code Online</h3>
-                <div>
-                    <select id="languageSelect" class="form-select form-select-sm d-inline-block w-auto">
-                        <option value="python" selected>Python</option>
-                        <option value="perl">Perl</option>
-                    </select>
-                    <button class="btn btn-sm btn-primary ms-2" onclick="runCode()">
-                        <i class="fas fa-play"></i> Chạy
-                    </button>
-                    <button class="btn btn-sm btn-secondary" onclick="clearCode()">
-                        <i class="fas fa-eraser"></i> Xóa
-                    </button>
-                    <button class="btn btn-sm btn-info" onclick="loadExample()">
-                        <i class="fas fa-lightbulb"></i> Ví dụ
-                    </button>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-6 mb-3">
-                    <div class="card h-100 shadow" style="min-width:700px;">
-                        <div class="card-header bg-dark text-white">
-                            <i class="fas fa-code"></i> Code Editor
-                        </div>
-                        <div class="card-body p-0">
-                            <textarea id="codeEditor" class="form-control border-0" 
-                                      style="height: 500px; font-family: 'Courier New', monospace; font-size: 14px;"
-                                      placeholder="# Nhập code của bạn ở đây..."></textarea>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Main Code Editor Area -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-code"></i> {{ assignment.title }}
+                        </h4>
+                        <div class="editor-controls">
+                            <span class="badge bg-primary me-2">{{ assignment.language|upper }}</span>
+                            <span class="badge bg-info me-2">{{ assignment.max_score }} điểm</span>
+                            {% if assignment.time_limit %}
+                            <span class="badge bg-warning" id="timeLimit">
+                                <i class="fas fa-clock"></i> <span id="timeLeft">{{ assignment.time_limit }}:00</span>
+                            </span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-6 mb-3">
-                    <div class="card h-100 shadow" style="min-width:340px;">
-                        <div class="card-header bg-success text-white">
-                            <i class="fas fa-terminal"></i> Kết quả
+                <div class="card-body p-0">
+                    <!-- Code Editor -->
+                    <div class="code-editor-container">
+                        <div class="editor-toolbar">
+                            <div class="toolbar-left">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="formatCode()">
+                                    <i class="fas fa-magic"></i> Format
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleTheme()">
+                                    <i class="fas fa-palette"></i> Theme
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleFullscreen()">
+                                    <i class="fas fa-expand"></i> Fullscreen
+                                </button>
+                            </div>
+                            <div class="toolbar-right">
+                                <span class="text-muted small" id="lineInfo">Line 1, Col 1</span>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <pre id="output" class="bg-dark text-white p-3 rounded" style="min-height: 450px; max-height: 450px; overflow-y: auto;">Kết quả sẽ hiển thị ở đây...</pre>
+                        
+                        <div class="editor-main">
+                            <textarea id="codeEditor" class="form-control" 
+                                      placeholder="// Nhập code của bạn ở đây...
+// Ví dụ:
+n = int(input())
+total = 0
+for i in range(1, n + 1):
+    total += i
+print(total)"
+                                      style="height: 500px; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5;"
+                                      spellcheck="false">{{ existing_submission.content if existing_submission else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Assignment Description -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Mô tả bài tập
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="assignment-description">
+                        {{ assignment.description|safe }}
+                    </div>
+                    
+                    {% if assignment.test_cases %}
+                    <div class="test-cases mt-3">
+                        <h6><i class="fas fa-vial"></i> Test Cases</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Input</th>
+                                        <th>Expected</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for test_case in assignment.test_cases|from_json %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><code>{{ test_case.input }}</code></td>
+                                        <td><code>{{ test_case.output }}</code></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Hành động
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success" onclick="runCode()">
+                            <i class="fas fa-play"></i> Chạy thử
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="saveAsDraft()">
+                            <i class="fas fa-save"></i> Lưu nháp
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="loadDraft()">
+                            <i class="fas fa-folder-open"></i> Tải nháp
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="submitAssignment()">
+                            <i class="fas fa-paper-plane"></i> Nộp bài
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Code Output -->
+            <div class="card mb-3" id="outputCard" style="display:none;">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-terminal"></i> Kết quả chạy thử
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="outputContent">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Đang chạy code...
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5>Hướng dẫn sử dụng:</h5>
-                            <ul>
-                                <li>Chọn ngôn ngữ lập trình (Python hoặc Perl)</li>
-                                <li>Nhập code vào khung bên trái</li>
-                                <li>Nhấn nút "Chạy" để xem kết quả</li>
-                                <li>Sử dụng nút "Ví dụ" để xem code mẫu</li>
-                            </ul>
-                        </div>
+            <!-- Progress Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Tiến độ
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-2">
+                        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
                     </div>
+                    <small class="text-muted">
+                        Đã lưu nháp: <span id="saveCount">0</span> lần
+                    </small>
+                    <br>
+                    <small class="text-muted">
+                        Lần nộp: <span id="submissionCount">{{ existing_submissions|length }}</span>/{{ assignment.max_submissions }}
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-const pythonExample = `# Ví dụ Python: Tính giai thừa
-def factorial(n):
-    if n == 0 or n == 1:
-        return 1
-    else:
-        return n * factorial(n - 1)
+<!-- Submission Modal -->
+<div class="modal fade" id="submissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-paper-plane"></i> Xác nhận nộp bài
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn nộp bài này?</p>
+                <div class="alert alert-info">
+                    <strong>Lưu ý:</strong>
+                    <ul class="mb-0">
+                        <li>Bài sẽ được chấm điểm tự động</li>
+                        <li>Không thể chỉnh sửa sau khi nộp</li>
+                        <li>Còn <span id="remainingSubmissions">{{ assignment.max_submissions - (existing_submissions|length) }}</span> lần nộp</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form method="POST" action="{{ url_for('submit_assignment', assignment_id=assignment.id) }}" id="submissionForm">
+                    <input type="hidden" name="code" id="codeInput">
+                    <input type="hidden" name="start_time" id="startTime" value="{{ moment().timestamp()|int if moment else '' }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Nộp bài
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-# Test
-number = 5
-result = factorial(number)
-print(f"Giai thừa của {number} là: {result}")
-
-# In bảng cửu chương
-print("\\nBảng cửu chương 5:")
-for i in range(1, 11):
-    print(f"5 x {i} = {5 * i}")`;
-
-const perlExample = `#!/usr/bin/perl
-# Ví dụ Perl: Tính giai thừa
-
-sub factorial {
-    my $n = shift;
-    return 1 if $n <= 1;
-    return $n * factorial($n - 1);
+<style>
+.code-editor-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
 }
 
-# Test
-my $number = 5;
-my $result = factorial($number);
-print "Giai thừa của $number là: $result\\n";
+.editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-bottom: 1px solid #dee2e6;
+}
 
-# In bảng cửu chương
-print "\\nBảng cửu chương 5:\\n";
-for (my $i = 1; $i <= 10; $i++) {
-    print "5 x $i = " . (5 * $i) . "\\n";
-}`;
+.toolbar-left {
+    display: flex;
+    gap: 8px;
+}
+
+.editor-main {
+    position: relative;
+}
+
+#codeEditor {
+    border: none;
+    resize: vertical;
+    outline: none;
+    padding: 15px;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#codeEditor:focus {
+    box-shadow: none;
+}
+
+.light-theme #codeEditor {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.assignment-description {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.test-cases {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.test-cases table {
+    font-size: 12px;
+}
+
+#outputContent {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.output-success {
+    color: #198754;
+}
+
+.output-error {
+    color: #dc3545;
+}
+
+.output-info {
+    color: #0dcaf0;
+}
+
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background-color: white;
+}
+
+.fullscreen .code-editor-container {
+    height: 100vh;
+}
+
+.fullscreen #codeEditor {
+    height: calc(100vh - 60px);
+}
+
+@media (max-width: 768px) {
+    .col-lg-8, .col-lg-4 {
+        margin-bottom: 20px;
+    }
+    
+    #codeEditor {
+        height: 300px;
+    }
+}
+</style>
+
+<script>
+let currentTheme = 'dark';
+let saveCount = 0;
+let isFullscreen = false;
+let timerInterval;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadDraft();
+    updateLineInfo();
+    startTimer();
+    
+    // Auto-save every 30 seconds
+    setInterval(autoSave, 30000);
+    
+    // Listen for code changes
+    document.getElementById('codeEditor').addEventListener('input', function() {
+        updateLineInfo();
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's':
+                    e.preventDefault();
+                    saveAsDraft();
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    runCode();
+                    break;
+                case 'F11':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+            }
+        }
+    });
+});
+
+function updateLineInfo() {
+    const textarea = document.getElementById('codeEditor');
+    const lines = textarea.value.split('\n');
+    const currentLine = lines.length;
+    const currentCol = textarea.value.substring(0, textarea.selectionStart).split('\n').pop().length + 1;
+    document.getElementById('lineInfo').textContent = `Line ${currentLine}, Col ${currentCol}`;
+}
+
+function startTimer() {
+    {% if assignment.time_limit %}
+    let timeLeft = {{ assignment.time_limit }} * 60; // Convert to seconds
+    
+    timerInterval = setInterval(function() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        document.getElementById('timeLeft').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 300) { // 5 minutes left
+            document.getElementById('timeLimit').classList.remove('bg-warning');
+            document.getElementById('timeLimit').classList.add('bg-danger');
+        }
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert('Hết thời gian làm bài!');
+            submitAssignment();
+        }
+        
+        timeLeft--;
+    }, 1000);
+    {% endif %}
+}
 
 function runCode() {
     const code = document.getElementById('codeEditor').value;
-    const language = document.getElementById('languageSelect').value;
-    const output = document.getElementById('output');
+    const language = '{{ assignment.language }}';
     
     if (!code.trim()) {
-        output.textContent = 'Vui lòng nhập code!';
+        alert('Vui lòng nhập code trước khi chạy thử!');
         return;
     }
     
-    output.textContent = 'Đang chạy code...';
+    // Show output card
+    document.getElementById('outputCard').style.display = 'block';
+    document.getElementById('outputContent').innerHTML = 
+        '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Đang chạy code...</div>';
     
     fetch('/api/run-code', {
         method: 'POST',
@@ -133,49 +415,132 @@ function runCode() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            output.textContent = data.output || 'Code chạy thành công nhưng không có output.';
+            document.getElementById('outputContent').innerHTML = 
+                `<div class="output-success">${data.output}</div>`;
         } else {
-            output.textContent = 'Error:\n' + (data.error || 'Lỗi không xác định');
+            document.getElementById('outputContent').innerHTML = 
+                `<div class="output-error">Error: ${data.error}</div>`;
         }
     })
     .catch(error => {
-        output.textContent = 'Lỗi kết nối: ' + error.message;
+        document.getElementById('outputContent').innerHTML = 
+            `<div class="output-error">Error: ${error.message}</div>`;
     });
 }
 
-function clearCode() {
-    if (confirm('Bạn có chắc muốn xóa toàn bộ code?')) {
-        document.getElementById('codeEditor').value = '';
-        document.getElementById('output').textContent = 'Kết quả sẽ hiển thị ở đây...';
+function saveAsDraft() {
+    const code = document.getElementById('codeEditor').value;
+    localStorage.setItem('draft_code_{{ assignment.id }}', code);
+    saveCount++;
+    document.getElementById('saveCount').textContent = saveCount;
+    
+    // Show success message
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-save text-success"></i>
+                <strong class="me-auto">Đã lưu nháp</strong>
+                <button type="button" class="btn-close" onclick="this.parentElement.parentElement.parentElement.remove()"></button>
+            </div>
+            <div class="toast-body">
+                Code đã được lưu nháp thành công!
+            </div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+function loadDraft() {
+    const draft = localStorage.getItem('draft_code_{{ assignment.id }}');
+    if (draft) {
+        document.getElementById('codeEditor').value = draft;
+        updateLineInfo();
     }
 }
 
-function loadExample() {
-    const language = document.getElementById('languageSelect').value;
+function autoSave() {
+    const code = document.getElementById('codeEditor').value;
+    if (code.trim()) {
+        localStorage.setItem('draft_code_{{ assignment.id }}', code);
+    }
+}
+
+function formatCode() {
+    const textarea = document.getElementById('codeEditor');
+    const code = textarea.value;
+    
+    // Simple formatting for Python
+    if ('{{ assignment.language }}' === 'python') {
+        // Add proper indentation
+        const lines = code.split('\n');
+        const formattedLines = lines.map(line => {
+            if (line.trim().startsWith('def ') || line.trim().startsWith('class ') || line.trim().startsWith('if ') || 
+                line.trim().startsWith('for ') || line.trim().startsWith('while ') || line.trim().startsWith('try:') ||
+                line.trim().startsWith('except') || line.trim().startsWith('finally:') || line.trim().startsWith('else:')) {
+                return line.trim();
+            }
+            return line;
+        });
+        textarea.value = formattedLines.join('\n');
+    }
+    
+    updateLineInfo();
+}
+
+function toggleTheme() {
     const editor = document.getElementById('codeEditor');
-    
-    if (language === 'python') {
-        editor.value = pythonExample;
+    if (currentTheme === 'dark') {
+        editor.style.backgroundColor = '#ffffff';
+        editor.style.color = '#000000';
+        currentTheme = 'light';
     } else {
-        editor.value = perlExample;
+        editor.style.backgroundColor = '#1e1e1e';
+        editor.style.color = '#d4d4d4';
+        currentTheme = 'dark';
     }
 }
 
-// Run code on Ctrl+Enter
-document.getElementById('codeEditor').addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        runCode();
+function toggleFullscreen() {
+    const container = document.querySelector('.code-editor-container');
+    if (!isFullscreen) {
+        container.classList.add('fullscreen');
+        isFullscreen = true;
+    } else {
+        container.classList.remove('fullscreen');
+        isFullscreen = false;
+    }
+}
+
+function submitAssignment() {
+    const code = document.getElementById('codeEditor').value;
+    if (!code.trim()) {
+        alert('Vui lòng nhập code trước khi nộp bài!');
+        return;
     }
     
-    // Tab support
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = this.selectionStart;
-        const end = this.selectionEnd;
-        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-        this.selectionStart = this.selectionEnd = start + 4;
+    document.getElementById('codeInput').value = code;
+    const modal = new bootstrap.Modal(document.getElementById('submissionModal'));
+    modal.show();
+}
+
+// Handle form submission
+document.getElementById('submissionForm').addEventListener('submit', function(e) {
+    // Clear timer
+    if (timerInterval) {
+        clearInterval(timerInterval);
     }
+    
+    // Remove draft from localStorage
+    localStorage.removeItem('draft_code_{{ assignment.id }}');
 });
 </script>
 {% endblock %} 

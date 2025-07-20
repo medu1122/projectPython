@@ -50,6 +50,9 @@
                     <a href="{{ url_for('admin_dashboard') }}" class="header-nav-item">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
+                    <a href="{{ url_for('admin.manage_users') }}" class="header-nav-item">
+                        <i class="fas fa-users"></i> Quản lý người dùng
+                    </a>
                 {% elif current_user.role == 'teacher' %}
                     <a href="{{ url_for('teacher_dashboard') }}" class="header-nav-item">
                         <i class="fas fa-chalkboard-teacher"></i> Dashboard

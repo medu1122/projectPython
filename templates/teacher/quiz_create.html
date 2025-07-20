@@ -1,0 +1,87 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-question-circle"></i> Tạo bài trắc nghiệm mới
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="course_id" class="form-label">Khóa học *</label>
+                                <select class="form-select" id="course_id" name="course_id" required>
+                                    <option value="">Chọn khóa học</option>
+                                    {% for course in courses %}
+                                        <option value="{{ course.id }}">{{ course.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="time_limit" class="form-label">Thời gian làm bài (phút)</label>
+                                <input type="number" class="form-control" id="time_limit" name="time_limit" 
+                                       value="15" min="1" max="180">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Tiêu đề bài trắc nghiệm *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   placeholder="Ví dụ: Bài trắc nghiệm kiến thức Python cơ bản" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="description" name="description" rows="4"
+                                      placeholder="Mô tả chi tiết về bài trắc nghiệm, nội dung kiểm tra..."></textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="max_attempts" class="form-label">Số lần làm bài tối đa</label>
+                                <select class="form-select" id="max_attempts" name="max_attempts">
+                                    <option value="1">1 lần</option>
+                                    <option value="2">2 lần</option>
+                                    <option value="3">3 lần</option>
+                                    <option value="5">5 lần</option>
+                                    <option value="10">10 lần</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tùy chọn</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="shuffle_questions" 
+                                           name="shuffle_questions">
+                                    <label class="form-check-label" for="shuffle_questions">
+                                        Xáo trộn thứ tự câu hỏi
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show_correct_answers" 
+                                           name="show_correct_answers">
+                                    <label class="form-check-label" for="show_correct_answers">
+                                        Hiển thị đáp án đúng sau khi nộp bài
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('teacher_assignments') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Tạo bài trắc nghiệm
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

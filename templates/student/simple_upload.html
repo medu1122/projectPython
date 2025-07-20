@@ -1,0 +1,366 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-upload"></i> Nộp bài tập - Upload File
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Thông tin bài tập -->
+                    <div class="assignment-info mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-info-circle"></i> Thông tin bài tập</h5>
+                                <ul class="list-unstyled">
+                                    <li><strong>Loại:</strong> <span class="badge bg-primary">Code</span></li>
+                                    <li><strong>Điểm tối đa:</strong> 100 điểm</li>
+                                    <li><strong>Hạn nộp:</strong> <span class="text-success">27/07/2025 13:00</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-file-alt"></i> Yêu cầu file</h5>
+                                <ul class="list-unstyled">
+                                    <li><strong>Định dạng:</strong> <span class="badge bg-info">.py, .pl, .txt, .zip</span></li>
+                                    <li><strong>Kích thước tối đa:</strong> <span class="badge bg-warning">10MB</span></li>
+                                    <li><strong>Số lần nộp:</strong> <span class="badge bg-secondary">0/3</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mô tả bài tập -->
+                    <div class="assignment-description mb-4">
+                        <h5><i class="fas fa-align-left"></i> Mô tả bài tập</h5>
+                        <div class="border rounded p-3 bg-light">
+                            <p><strong>Bài tập:</strong> Viết chương trình Python tính tổng từ 1 đến n</p>
+                            <p><strong>Yêu cầu:</strong></p>
+                            <ul>
+                                <li>Nhập số n từ bàn phím</li>
+                                <li>Tính tổng từ 1 đến n</li>
+                                <li>In kết quả ra màn hình</li>
+                            </ul>
+                            <p><strong>Ví dụ:</strong></p>
+                            <ul>
+                                <li>Input: 5 → Output: 15</li>
+                                <li>Input: 10 → Output: 55</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Form upload file -->
+                    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <div class="upload-section mb-4">
+                            <h5><i class="fas fa-cloud-upload-alt"></i> Upload file bài tập</h5>
+                            
+                            <!-- Drag & Drop Zone -->
+                            <div class="upload-zone" id="uploadZone">
+                                <div class="upload-content">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <h6>Kéo thả file vào đây hoặc click để chọn</h6>
+                                    <p class="text-muted">Hỗ trợ: .py, .pl, .txt, .zip (tối đa 10MB)</p>
+                                    <input type="file" id="fileInput" name="file" accept=".py,.pl,.txt,.zip" style="display: none;">
+                                    <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                        <i class="fas fa-folder-open"></i> Chọn file
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- File Preview -->
+                            <div id="filePreview" class="mt-3" style="display: none;">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-file-code fa-2x text-primary me-3"></i>
+                                            <div class="flex-grow-1">
+                                                <h6 id="fileName" class="mb-1"></h6>
+                                                <small class="text-muted">
+                                                    Kích thước: <span id="fileSize"></span> | 
+                                                    Loại: <span id="fileType"></span>
+                                                </small>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ghi chú -->
+                        <div class="notes-section mb-4">
+                            <h5><i class="fas fa-sticky-note"></i> Ghi chú (tùy chọn)</h5>
+                            <textarea class="form-control" name="notes" id="notes" rows="4" 
+                                      placeholder="Nhập ghi chú về bài làm của bạn (ví dụ: cách giải, khó khăn gặp phải, v.v.)"></textarea>
+                            <small class="text-muted">Ghi chú sẽ giúp giảng viên hiểu rõ hơn về cách tiếp cận của bạn</small>
+                        </div>
+
+                        <!-- Xác nhận -->
+                        <div class="confirmation-section mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmCheck" required>
+                                <label class="form-check-label" for="confirmCheck">
+                                    Tôi xác nhận rằng đây là bài làm của chính tôi và tuân thủ quy định về đạo văn
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Nút submit -->
+                        <div class="submit-section text-center">
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
+                                <i class="fas fa-paper-plane"></i> Nộp bài
+                            </button>
+                            <a href="#" class="btn btn-secondary btn-lg ms-2" onclick="history.back()">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lịch sử nộp bài -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Lịch sử nộp bài
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>Chưa có bài nộp nào</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success"></i> Nộp bài thành công!
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bài tập của bạn đã được nộp thành công!</p>
+                <div class="alert alert-info">
+                    <strong>Thông tin:</strong>
+                    <ul class="mb-0">
+                        <li>File: <span id="submittedFileName"></span></li>
+                        <li>Thời gian nộp: <span id="submittedTime"></span></li>
+                        <li>Trạng thái: Chờ chấm điểm</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.upload-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: #f8f9fa;
+}
+
+.upload-zone:hover {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+.upload-zone.dragover {
+    border-color: #28a745;
+    background-color: #d4edda;
+}
+
+.upload-zone.dragover .upload-content {
+    transform: scale(1.05);
+}
+
+.upload-content {
+    transition: transform 0.3s ease;
+}
+
+.assignment-info ul li {
+    margin-bottom: 8px;
+}
+
+.assignment-description {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#filePreview .card {
+    border-left: 4px solid #007bff;
+}
+
+.notes-section textarea {
+    resize: vertical;
+}
+
+.confirmation-section {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+}
+
+.submit-section .btn {
+    min-width: 150px;
+}
+
+@media (max-width: 768px) {
+    .upload-zone {
+        padding: 20px;
+    }
+    
+    .submit-section .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .submit-section .btn:last-child {
+        margin-bottom: 0;
+    }
+}
+</style>
+
+<script>
+let selectedFile = null;
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+const submitBtn = document.getElementById('submitBtn');
+const confirmCheck = document.getElementById('confirmCheck');
+
+// Drag & Drop functionality
+uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelect(files[0]);
+    }
+});
+
+uploadZone.addEventListener('click', () => {
+    fileInput.click();
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+    }
+});
+
+function handleFileSelect(file) {
+    // Validate file type
+    const allowedTypes = ['.py', '.pl', '.txt', '.zip'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension)) {
+        alert('Loại file không được hỗ trợ! Vui lòng chọn file có định dạng: ' + allowedTypes.join(', '));
+        return;
+    }
+    
+    // Validate file size (10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+        alert('File quá lớn! Kích thước tối đa là 10MB.');
+        return;
+    }
+    
+    selectedFile = file;
+    displayFilePreview(file);
+    updateSubmitButton();
+}
+
+function displayFilePreview(file) {
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const fileType = document.getElementById('fileType');
+    
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    fileType.textContent = file.type || 'Unknown';
+    
+    filePreview.style.display = 'block';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function removeFile() {
+    selectedFile = null;
+    filePreview.style.display = 'none';
+    fileInput.value = '';
+    updateSubmitButton();
+}
+
+function updateSubmitButton() {
+    submitBtn.disabled = !selectedFile || !confirmCheck.checked;
+}
+
+confirmCheck.addEventListener('change', updateSubmitButton);
+
+// Form submission
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+        alert('Vui lòng chọn file để nộp!');
+        return;
+    }
+    
+    if (!confirmCheck.checked) {
+        alert('Vui lòng xác nhận rằng đây là bài làm của chính bạn!');
+        return;
+    }
+    
+    // Simulate upload success
+    document.getElementById('submittedFileName').textContent = selectedFile.name;
+    document.getElementById('submittedTime').textContent = new Date().toLocaleString('vi-VN');
+    
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    successModal.show();
+    
+    // Reset form
+    setTimeout(() => {
+        removeFile();
+        document.getElementById('notes').value = '';
+        confirmCheck.checked = false;
+        updateSubmitButton();
+    }, 2000);
+});
+</script>
+{% endblock %} 
